@@ -1,5 +1,7 @@
 package firehose
 
+import "bytes"
+
 // Enabled determines if firehose instrumentation is enabled. Controlling
 // firehose behavior is then controlled via other flag like.
 var Enabled = false
@@ -40,3 +42,28 @@ var BlockProgressEnabled = false
 // have a compilation cycle because `core` package already uses `firehose` package.
 // Consumer of this library make the cast back to the correct types when needed.
 var GenesisConfig interface{}
+
+// Init is called manually when Firehose is bootstrapped.
+func Init() {
+	if !Enabled {
+		return
+	}
+
+	// 50 MiB
+	BlockSyncBuffer = bytes.NewBuffer(make([]byte, 0, 50*1024*1024))
+
+	// 5 MiB
+	TxSyncBuffer = bytes.NewBuffer(make([]byte, 0, 5*1024*1024))
+}
+
+// BlockSyncBuffer to use and re-used for the state processor firehose context used to
+// accumulate Firehose data for a block.
+//
+// BlockSyncBuffer is **not** thread-safe, it's expected to be used only by one thread at a time.
+var BlockSyncBuffer *bytes.Buffer
+
+// TxSyncBuffer holds a buffer of 5 MiB which should be enough for all transaction and it's
+// re-used for all transactions so shouldn't be a big deal for the memory
+//
+// TxSyncBuffer is **not** thread-safe, it's expected to be used only by one thread at a time.
+var TxSyncBuffer = bytes.NewBuffer(make([]byte, 0, 5*1024*1024))

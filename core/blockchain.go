@@ -427,7 +427,8 @@ func NewBlockChain(db ethdb.Database, cacheConfig *CacheConfig, genesis *Genesis
 		// the genesis config computed matched Geth saved genesis block.
 		recomputedGenesisBlock := genesis.ToBlock()
 		if bc.genesisBlock.Hash() != recomputedGenesisBlock.Hash() {
-			panic(fmt.Errorf("invalid Firehose genesis block and actual chain's stored genesis block, the actual genesis block's hash field extracted from Geth's database does not fit with hash of genesis block generated from Firehose determined genesis config, you might need to provide the correct 'genesis.json' file via --firehose-genesis-file"))
+			firehose.ReportHeaderComparisonResult(recomputedGenesisBlock.Header(), bc.genesisBlock.Header())
+			panic("firehose genesis block hash mismatch vs geth computed genesis block hash")
 		}
 
 		firehose.MaybeSyncContext().RecordGenesisBlock(bc.genesisBlock, func(ctx *firehose.Context) {
@@ -1774,6 +1775,7 @@ func (bc *BlockChain) insertChain(chain types.Blocks, setHead bool) (int, error)
 				ptd := bc.GetTd(block.ParentHash(), block.NumberU64()-1)
 				td := new(big.Int).Add(block.Difficulty(), ptd)
 				firehoseContext.EndBlock(block, bc.CurrentFinalBlock(), td)
+				firehoseContext.FlushBlock()
 			}
 
 			stats.processed++
@@ -1818,14 +1820,16 @@ func (bc *BlockChain) insertChain(chain types.Blocks, setHead bool) (int, error)
 		}
 
 		// Process block using the parent state as reference point
+		firehoseContext := firehose.NoOpContext
+		if firehose.Enabled {
+			firehoseContext = firehose.NewSpeculativeExecutionContextWithBuffer(firehose.BlockSyncBuffer)
+		}
+
 		pstart := time.Now()
-		receipts, logs, usedGas, err := bc.processor.Process(block, statedb, bc.vmConfig)
+		receipts, logs, usedGas, err := bc.processor.Process(block, statedb, bc.vmConfig, firehoseContext)
 		if err != nil {
 			bc.reportBlock(block, receipts, err)
 			followupInterrupt.Store(true)
-			if firehoseContext := firehose.MaybeSyncContext(); firehoseContext.Enabled() {
-				firehoseContext.CancelBlock(block, err)
-			}
 			return it.index, err
 		}
 		ptime := time.Since(pstart)
@@ -1834,13 +1838,10 @@ func (bc *BlockChain) insertChain(chain types.Blocks, setHead bool) (int, error)
 		if err := bc.validator.ValidateState(block, statedb, receipts, usedGas); err != nil {
 			bc.reportBlock(block, receipts, err)
 			followupInterrupt.Store(true)
-			if firehoseContext := firehose.MaybeSyncContext(); firehoseContext.Enabled() {
-				firehoseContext.CancelBlock(block, err)
-			}
 			return it.index, err
 		}
 
-		if firehoseContext := firehose.MaybeSyncContext(); firehoseContext.Enabled() {
+		if firehoseContext.Enabled() {
 			// Calculate the total difficulty of the block
 			ptd := bc.GetTd(block.ParentHash(), block.NumberU64()-1)
 			difficulty := block.Difficulty()
@@ -1897,6 +1898,12 @@ func (bc *BlockChain) insertChain(chain types.Blocks, setHead bool) (int, error)
 		if err != nil {
 			return it.index, err
 		}
+
+		if firehoseContext.Enabled() {
+			// This is last point where there is no more an early return due to an error, we flush here
+			firehoseContext.FlushBlock()
+		}
+
 		// Update the metrics touched during block commit
 		accountCommitTimer.Update(statedb.AccountCommits)   // Account commits are complete, we can mark them
 		storageCommitTimer.Update(statedb.StorageCommits)   // Storage commits are complete, we can mark them
