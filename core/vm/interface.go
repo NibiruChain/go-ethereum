@@ -52,11 +52,13 @@ type StateDB interface {
 	GetTransientState(addr common.Address, key common.Hash) common.Hash
 	SetTransientState(addr common.Address, key, value common.Hash)
 
-	Suicide(common.Address, *firehose.Context) bool
-	HasSuicided(common.Address) bool
+	SelfDestruct(common.Address, *firehose.Context)
+	HasSelfDestructed(common.Address) bool
+
+	Selfdestruct6780(common.Address, *firehose.Context)
 
 	// Exist reports whether the given account exists in state.
-	// Notably this should also return true for suicided accounts.
+	// Notably this should also return true for self-destructed accounts.
 	Exist(common.Address) bool
 	// Empty returns whether the given account is empty. Empty
 	// is defined according to EIP161 (balance = nonce = code = 0).

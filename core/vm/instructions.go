@@ -413,7 +413,7 @@ func opExtCodeCopy(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext)
 // emptyCodeHash. If the precompile account is not transferred any amount on a private or
 // customized chain, the return value will be zero.
 //
-//  5. Caller tries to get the code hash for an account which is marked as suicided
+//  5. Caller tries to get the code hash for an account which is marked as self-destructed
 //     in the current transaction, the code hash of this account should be returned.
 //
 //  6. Caller tries to get the code hash for an account which is marked as deleted, this
@@ -854,7 +854,38 @@ func opSelfdestruct(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext
 	beneficiary := scope.Stack.pop()
 	balance := interpreter.evm.StateDB.GetBalance(scope.Contract.Address())
 	interpreter.evm.StateDB.AddBalance(beneficiary.Bytes20(), balance, false, interpreter.evm.firehoseContext, firehose.BalanceChangeReason("suicide_refund"))
-	interpreter.evm.StateDB.Suicide(scope.Contract.Address(), interpreter.evm.firehoseContext)
+	interpreter.evm.StateDB.SelfDestruct(scope.Contract.Address(), interpreter.evm.firehoseContext)
+	if tracer := interpreter.evm.Config.Tracer; tracer != nil {
+		tracer.CaptureEnter(SELFDESTRUCT, scope.Contract.Address(), beneficiary.Bytes20(), []byte{}, 0, balance)
+		tracer.CaptureExit([]byte{}, 0, nil)
+	}
+	return nil, errStopToken
+}
+
+func opSelfdestruct6780(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte, error) {
+	if interpreter.readOnly {
+		return nil, ErrWriteProtection
+	}
+	beneficiary := scope.Stack.pop()
+	balance := interpreter.evm.StateDB.GetBalance(scope.Contract.Address())
+	// In Firehose context, the `SubBalance` here is actually recorded in `RecordSuicide` invoked within `Selfdestruct6780` implementation.
+	// The EIP-6780 (https://eips.ethereum.org/EIPS/eip-6780) introduced a new logic for handling SELFDESTRUCT op code. While in the
+	// previous implementation (e.g. `opSelfdestruct`), there was no `SubBalance` explicitely performed because account was actually fully
+	// deleted as part of the `SelfDestruct` work.
+	//
+	// Now this is not the case anymore, and the account is not deleted anymore (e.g. it's storage still exists but are
+	// marked "empty").
+	//
+	// This is why in EIP-6780 implementation, there is an explicit `SubBalance` performed, because the account state might not
+	// be deleted anymore.
+	//
+	// Since the `RecordSuicide` is invoked within `Selfdestruct6780` implementation, we need to make sure that the `SubBalance`
+	// is not recorded in the firehose context, otherwise it will be recorded twice.
+	//
+	// Search within project for 7583a5771c58d63f4790de88f28485f6 (comment cross-link) for more details.
+	interpreter.evm.StateDB.SubBalance(scope.Contract.Address(), balance, interpreter.evm.firehoseContext, firehose.IgnoredBalanceChangeReason)
+	interpreter.evm.StateDB.AddBalance(beneficiary.Bytes20(), balance, false, interpreter.evm.firehoseContext, firehose.BalanceChangeReason("suicide_refund"))
+	interpreter.evm.StateDB.Selfdestruct6780(scope.Contract.Address(), interpreter.evm.firehoseContext)
 	if tracer := interpreter.evm.Config.Tracer; tracer != nil {
 		tracer.CaptureEnter(SELFDESTRUCT, scope.Contract.Address(), beneficiary.Bytes20(), []byte{}, 0, balance)
 		tracer.CaptureExit([]byte{}, 0, nil)
