@@ -449,12 +449,12 @@ func NewBlockChain(db ethdb.Database, cacheConfig *CacheConfig, genesis *Genesis
 		}
 
 		if firehose.GenesisConfig == nil {
-			panic(fmt.Errorf("genesis config is not set, there is something weird as all code path should generate the correct genesis config"))
+			panic(firehose.MissingGenesisPanicMessage)
 		}
 
 		genesis := firehose.GenesisConfig.(*Genesis)
 		if genesis == nil {
-			panic(fmt.Errorf("genesis config is not set, there is something weird as all code path should generate the correct genesis config"))
+			panic(firehose.MissingGenesisPanicMessage)
 		}
 
 		// As far as I can tell, the block's hash comes from the keccak hash of the rlp encoding

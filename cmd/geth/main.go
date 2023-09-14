@@ -33,7 +33,6 @@ import (
 	"github.com/ethereum/go-ethereum/eth"
 	"github.com/ethereum/go-ethereum/eth/downloader"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/firehose"
 	"github.com/ethereum/go-ethereum/internal/debug"
 	"github.com/ethereum/go-ethereum/internal/ethapi"
 	"github.com/ethereum/go-ethereum/internal/flags"
@@ -258,16 +257,10 @@ func init() {
 			log.Error("firehose failed to set sync mode to full", err)
 		}
 
-		if err := debug.Setup(ctx, utils.MakeGenesis(ctx)); err != nil {
+		git, _ := version.VCS()
+		if err := debug.Setup(ctx, utils.MakeGenesis(ctx), params.VersionWithCommit(git.Commit, git.Date)); err != nil {
 			return err
 		}
-
-		git, _ := version.VCS()
-		firehose.MaybeSyncContext().InitVersion(
-			params.VersionWithCommit(git.Commit, git.Date),
-			params.FirehoseVersion(),
-			params.Variant,
-		)
 
 		return nil
 	}

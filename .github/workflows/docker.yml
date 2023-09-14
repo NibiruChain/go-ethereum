@@ -4,6 +4,9 @@ on:
   push:
     tags:
       - "[a-z0-9]+-v*"
+    branches:
+      - "fix/*"
+      - "feature/*"
 
 env:
   REGISTRY: ghcr.io
@@ -53,6 +56,7 @@ jobs:
           # - 2 docker tags: `{geth|bsc|...}-latest` and `{git-tag}`
           tags: |
             type=ref,event=tag,priority=1000
+            type=ref,event=branch,priority=1000
             type=match,pattern=^(.*)-v\d+.\d+.\d+-fh,group=1,suffix=-latest-fh2
           flavor: |
             latest=false
