@@ -83,7 +83,7 @@ func Init(
 	// We must check for both `nil` and `(*core.Genesis)(nil)`, latter case that is not catch by using `genesis == nil` directly
 	if !isNilInterfaceOrNilValue(genesis) {
 		GenesisConfig = genesis
-		genesisProvenance = "Geth Specific Flag"
+		genesisProvenance = "Geth Specific Flag (--<chain>)"
 	} else {
 		if genesisFilePath := genesisFile; genesisFilePath != "" {
 			file, err := os.Open(genesisFilePath)
@@ -98,7 +98,7 @@ func Init(
 			}
 
 			GenesisConfig = genesis
-			genesisProvenance = "User provider"
+			genesisProvenance = "Firehose Specific Flag (--firehose-genesis <file>)"
 		}
 	}
 

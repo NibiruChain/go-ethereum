@@ -355,7 +355,7 @@ func Setup(ctx *cli.Context, firehoseGenesis *core.Genesis, firehoseGethVersion 
 		log.Info("Logging configured", context...)
 	}
 
-	firehose.Init(ctx.Bool(firehoseEnabledFlag.Name),
+	if err := firehose.Init(ctx.Bool(firehoseEnabledFlag.Name),
 		ctx.Bool(firehoseSyncInstrumentationFlag.Name),
 		ctx.Bool(firehoseMiningEnabledFlag.Name),
 		ctx.Bool(firehoseBlockProgressFlag.Name),
@@ -363,7 +363,9 @@ func Setup(ctx *cli.Context, firehoseGenesis *core.Genesis, firehoseGethVersion 
 		ctx.String(firehoseGenesisFileFlag.Name),
 		func() interface{} { return new(core.Genesis) },
 		firehoseGethVersion,
-	)
+	); err != nil {
+		return fmt.Errorf("initializing firehose: %w", err)
+	}
 
 	return nil
 }
