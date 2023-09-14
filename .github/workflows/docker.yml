@@ -5,8 +5,9 @@ on:
     tags:
       - "[a-z0-9]+-v*"
     branches:
-      - "fix/*"
-      - "feature/*"
+      # Expected to be <network>/{fix,feature}/<name> where <network> is one of {geth,bsc,polygon,etc.}
+      - "*/fix/*"
+      - "*/feature/*"
 
 env:
   REGISTRY: ghcr.io
