@@ -156,20 +156,19 @@ func (ga *GenesisAlloc) flush(db ethdb.Database, triedb *trie.Database, blockhas
 		return err
 	}
 
-	// Don't think this will ever be actually called while syncing a chain, but let's keep it
-	// with a potential real Firehose output
-	firehoseContext := firehose.MaybeSyncContext()
-
+	// Firehose: We do not log those as we are going to trace the genesis block on Blockchain start, so there is no
+	// need to log the genesis block creation.
 	for addr, account := range *ga {
 		if account.Balance != nil {
-			statedb.AddBalance(addr, account.Balance, false, firehoseContext, firehose.BalanceChangeReason("genesis_balance"))
+			statedb.AddBalance(addr, account.Balance, false, firehose.NoOpContext, firehose.BalanceChangeReason("genesis_balance"))
 		}
-		statedb.SetCode(addr, account.Code, firehoseContext)
-		statedb.SetNonce(addr, account.Nonce, firehoseContext)
+		statedb.SetCode(addr, account.Code, firehose.NoOpContext)
+		statedb.SetNonce(addr, account.Nonce, firehose.NoOpContext)
 		for key, value := range account.Storage {
-			statedb.SetState(addr, key, value, firehoseContext)
+			statedb.SetState(addr, key, value, firehose.NoOpContext)
 		}
 	}
+
 	root, err := statedb.Commit(0, false)
 	if err != nil {
 		return err
