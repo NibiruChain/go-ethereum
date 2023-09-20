@@ -158,9 +158,10 @@ func (ga *GenesisAlloc) flush(db ethdb.Database, triedb *trie.Database, blockhas
 
 	// Firehose: We do not log those as we are going to trace the genesis block on Blockchain start, so there is no
 	// need to log the genesis block creation.
+
 	for addr, account := range *ga {
 		if account.Balance != nil {
-			statedb.AddBalance(addr, account.Balance, false, firehose.NoOpContext, firehose.BalanceChangeReason("genesis_balance"))
+			statedb.AddBalance(addr, account.Balance, false, firehose.NoOpContext, firehose.IgnoredBalanceChangeReason)
 		}
 		statedb.SetCode(addr, account.Code, firehose.NoOpContext)
 		statedb.SetNonce(addr, account.Nonce, firehose.NoOpContext)
