@@ -236,7 +236,7 @@ func init() {
 	}
 	app.Before = func(ctx *cli.Context) error {
 		flags.MigrateGlobalFlags(ctx)
-		return debug.Setup(ctx)
+		return debug.Setup(ctx, nil, "")
 	}
 	app.After = func(ctx *cli.Context) error {
 		debug.Exit()
