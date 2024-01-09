@@ -685,7 +685,6 @@ func (s *StateDB) createObject(addr common.Address, isPrecompiledAddr bool, fire
 	if firehoseContext.Enabled() && !isPrecompiledAddr {
 		firehoseContext.RecordNewAccount(addr)
 	}
-	newobj.created = true
 
 	s.setStateObject(newobj)
 	if prev != nil && !prev.deleted {
@@ -1024,7 +1023,7 @@ func (s *StateDB) fastDeleteStorage(addrHash common.Hash, root common.Hash) (boo
 // employed when the associated state snapshot is not available. It iterates the
 // storage slots along with all internal trie nodes via trie directly.
 func (s *StateDB) slowDeleteStorage(addr common.Address, addrHash common.Hash, root common.Hash) (bool, common.StorageSize, map[common.Hash][]byte, *trienode.NodeSet, error) {
-	tr, err := s.db.OpenStorageTrie(s.originalRoot, addr, root)
+	tr, err := s.db.OpenStorageTrie(s.originalRoot, addr, root, s.trie)
 	if err != nil {
 		return false, 0, nil, nil, fmt.Errorf("failed to open storage trie, err: %w", err)
 	}
