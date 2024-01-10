@@ -84,7 +84,6 @@ func (p *StateProcessor) Process(block *types.Block, statedb *state.StateDB, cfg
 	)
 
 	if beaconRoot := block.BeaconRoot(); beaconRoot != nil {
-		// Firehose: FIXME Enable support for EIP-4788.
 		ProcessBeaconBlockRoot(*beaconRoot, vmenv, statedb, firehoseContext)
 	}
 
@@ -217,6 +216,9 @@ func ApplyTransaction(config *params.ChainConfig, bc ChainContext, author *commo
 // ProcessBeaconBlockRoot applies the EIP-4788 system call to the beacon block root
 // contract. This method is exported to be used in tests.
 func ProcessBeaconBlockRoot(beaconRoot common.Hash, vmenv *vm.EVM, statedb *state.StateDB, firehoseContext *firehose.Context) {
+	firehoseContext.StartSystemCall()
+	defer firehoseContext.EndSystemCall()
+
 	// If EIP-4788 is enabled, we need to invoke the beaconroot storage contract with
 	// the new root
 	msg := &Message{

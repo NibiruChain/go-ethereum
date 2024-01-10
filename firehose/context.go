@@ -239,6 +239,22 @@ func (ctx *Context) CancelBlock(block *types.Block, err error) {
 	)
 }
 
+func (ctx *Context) StartSystemCall() {
+	if !ctx.inBlock.Load() {
+		panic("starting system call while not already within a block scope")
+	}
+
+	ctx.printer.Print("SYSTEM_CALL_START")
+}
+
+func (ctx *Context) EndSystemCall() {
+	if !ctx.inBlock.Load() {
+		panic("ending system call while not already within a block scope")
+	}
+
+	ctx.printer.Print("SYSTEM_CALL_END")
+}
+
 // Transaction methods
 
 func (ctx *Context) StartTransaction(tx *types.Transaction, txIndex uint, baseFee *big.Int) {
