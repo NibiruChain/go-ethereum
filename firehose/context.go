@@ -240,8 +240,16 @@ func (ctx *Context) CancelBlock(block *types.Block, err error) {
 }
 
 func (ctx *Context) StartSystemCall() {
+	if ctx == nil {
+		return
+	}
+
 	if !ctx.inBlock.Load() {
 		panic("starting system call while not already within a block scope")
+	}
+
+	if !ctx.inTransaction.CAS(false, true) {
+		panic("entering a system call while already in a transaction scope")
 	}
 
 	ctx.printer.Print("SYSTEM_CALL_START")
@@ -252,6 +260,11 @@ func (ctx *Context) EndSystemCall() {
 		panic("ending system call while not already within a block scope")
 	}
 
+	if ctx.inTransaction.Load() {
+		panic("entering a system call while already in a transaction scope")
+	}
+
+	ctx.resetTransaction()
 	ctx.printer.Print("SYSTEM_CALL_END")
 }
 
@@ -345,10 +358,8 @@ func (ctx *Context) StartTransactionRaw(
 	maxPriorityFeePerGas *big.Int,
 	txType uint8,
 	txIndex uint,
-	// The data gas used is actually computed for the transaction and there is no execution,
-	// so it's known already at that point.
-	blobDataGasUsed uint64,
-	maxFeePerDataGas *big.Int,
+	blobGas uint64,
+	blobGasFeeCap *big.Int,
 	blobHashes []common.Hash,
 ) {
 	if ctx == nil {
@@ -375,9 +386,9 @@ func (ctx *Context) StartTransactionRaw(
 		maxPriorityFeePerGasAsString = Hex(maxPriorityFeePerGas.Bytes())
 	}
 
-	maxFeePerDataGasAsString := "."
-	if maxFeePerDataGas != nil {
-		maxFeePerDataGasAsString = Hex(maxFeePerDataGas.Bytes())
+	blobGasFeeCapAsString := "."
+	if blobGasFeeCap != nil {
+		blobGasFeeCapAsString = Hex(blobGasFeeCap.Bytes())
 	}
 
 	blobHashesAsString := "."
@@ -389,9 +400,6 @@ func (ctx *Context) StartTransactionRaw(
 
 		blobHashesAsString = strings.Join(stringHashses, ",")
 	}
-
-	// Fork is not active yet, so let's not modify the instrumentation just yet
-	_, _, _ = blobDataGasUsed, maxFeePerDataGasAsString, blobHashesAsString
 
 	ctx.printer.Print("BEGIN_APPLY_TRX",
 		Hash(hash),
@@ -410,10 +418,9 @@ func (ctx *Context) StartTransactionRaw(
 		Uint8(txType),
 		Uint64(ctx.totalOrderingCounter.Inc()),
 		Uint(txIndex),
-		// Blob fields will go here once activated
-		// Uint64(blobDataGasUsed),
-		// maxFeePerDataGasAsString,
-		// blobHashesAsString,
+		Uint64(blobGas),
+		blobGasFeeCapAsString,
+		blobHashesAsString,
 	)
 }
 
@@ -491,6 +498,8 @@ func (ctx *Context) EndTransaction(receipt *types.Receipt) {
 		Uint64(receipt.CumulativeGasUsed),
 		Hex(receipt.Bloom[:]),
 		Uint64(ctx.totalOrderingCounter.Inc()),
+		Uint64(receipt.BlobGasUsed),
+		BigInt(receipt.BlobGasPrice),
 		JSON(logItems),
 	)
 
