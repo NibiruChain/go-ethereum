@@ -260,8 +260,8 @@ func (ctx *Context) EndSystemCall() {
 		panic("ending system call while not already within a block scope")
 	}
 
-	if ctx.inTransaction.Load() {
-		panic("entering a system call while already in a transaction scope")
+	if !ctx.inTransaction.CAS(true, false) {
+		panic("ending a system call while not in a transaction scope")
 	}
 
 	ctx.resetTransaction()
