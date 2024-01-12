@@ -16,6 +16,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethmath "github.com/ethereum/go-ethereum/common/math"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/params"
 	"go.uber.org/atomic"
 )
 
@@ -764,6 +765,9 @@ func (ctx *Context) RecordSuicide(addr common.Address, suicided bool, balanceBef
 
 func (ctx *Context) RecordNewAccount(addr common.Address) {
 	if ctx == nil {
+		return
+	}
+	if addr.Cmp(params.SystemAddress) == 0 {
 		return
 	}
 
