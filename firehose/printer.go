@@ -135,6 +135,9 @@ func Hex(in []byte) string {
 }
 
 func BigInt(in *big.Int) string {
+	if in == nil {
+		return "00"
+	}
 	return Hex(in.Bytes())
 }
 
