@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/firehose"
 	"github.com/ethereum/go-ethereum/log"
 )
 
@@ -39,6 +40,8 @@ func (d *Downloader) BeaconDevSync(mode SyncMode, hash common.Hash, stop chan st
 	log.Warn("Beacon syncing with hash as target", "hash", hash)
 	log.Warn("This is unhealthy for a live node!")
 	log.Warn("----------------------------------")
+
+	firehose.ReprocessingWithSyncTarget = true
 
 	log.Info("Waiting for peers to retrieve sync target")
 	for {

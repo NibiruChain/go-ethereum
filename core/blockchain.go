@@ -1833,7 +1833,15 @@ func (bc *BlockChain) insertChain(chain types.Blocks, setHead bool) (int, error)
 				firehoseContext.FinalizeBlock(block)
 				ptd := bc.GetTd(block.ParentHash(), block.NumberU64()-1)
 				td := new(big.Int).Add(block.Difficulty(), ptd)
-				firehoseContext.EndBlock(block, bc.CurrentFinalBlock(), td)
+
+				var curFinalBlock *types.Header
+				if firehose.ReprocessingWithSyncTarget {
+					curFinalBlock = block.Header()
+				} else {
+					curFinalBlock = bc.CurrentFinalBlock()
+				}
+				firehoseContext.EndBlock(block, curFinalBlock, td)
+
 				firehoseContext.FlushBlock()
 			}
 
@@ -1913,11 +1921,15 @@ func (bc *BlockChain) insertChain(chain types.Blocks, setHead bool) (int, error)
 				td = new(big.Int).Add(difficulty, ptd)
 			}
 
-			finalBlockHeader := bc.CurrentFinalBlock()
-			if finalBlockHeader != nil && firehose.SyncingBehindFinalized() {
-				// If beaconFinalizedBlockNum is in the future, the 'finalizedBlock' will not progress until we reach it.
-				// we don't want to advertise a super old finalizedBlock when reprocessing.
-				finalBlockHeader = nil
+			var finalBlockHeader *types.Header
+			if firehose.ReprocessingWithSyncTarget {
+				finalBlockHeader = block.Header()
+			} else {
+				if cur := bc.CurrentFinalBlock(); cur != nil && !firehose.SyncingBehindFinalized() {
+					// If beaconFinalizedBlockNum is in the future, the 'finalizedBlock' will not progress until we reach it.
+					// we don't want to advertise a super old finalizedBlock when reprocessing.
+					finalBlockHeader = cur
+				}
 			}
 
 			firehoseContext.EndBlock(block, finalBlockHeader, td)

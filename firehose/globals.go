@@ -52,6 +52,10 @@ var BlockProgressEnabled = false
 // Consumer of this library make the cast back to the correct types when needed.
 var GenesisConfig interface{}
 
+// ReprocessingWithSyncTarget means that we are reprocessing the chain without a beacon.
+// This setting will cause the "Last Finalized Block" (LIB) set to follow each block that we process.
+var ReprocessingWithSyncTarget = false
+
 var MissingGenesisPanicMessage = "Firehose requires to have the genesis config to properly emit genesis block for this chain " +
 	"but it appears it was not set properly. Ensure you are using either chain's specific flag like " +
 	"'--mainnet' or if using a custom network, you can use '--firehose-genesis' flag to provide. Firehose " +
