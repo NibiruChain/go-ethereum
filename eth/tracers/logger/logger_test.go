@@ -27,6 +27,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/firehose"
 	"github.com/ethereum/go-ethereum/params"
+	"github.com/holiman/uint256"
 )
 
 type dummyContractRef struct {
@@ -58,7 +59,7 @@ func TestStoreCapture(t *testing.T) {
 	var (
 		logger   = NewStructLogger(nil)
 		env      = vm.NewEVM(vm.BlockContext{}, vm.TxContext{}, &dummyStatedb{}, params.TestChainConfig, vm.Config{Tracer: logger}, firehose.NoOpContext)
-		contract = vm.NewContract(&dummyContractRef{}, &dummyContractRef{}, new(big.Int), 100000, firehose.NoOpContext)
+		contract = vm.NewContract(&dummyContractRef{}, &dummyContractRef{}, new(uint256.Int), 100000, firehose.NoOpContext)
 	)
 	contract.Code = []byte{byte(vm.PUSH1), 0x1, byte(vm.PUSH1), 0x0, byte(vm.SSTORE)}
 	var index common.Hash

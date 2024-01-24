@@ -30,9 +30,9 @@ import (
 
 type (
 	// CanTransferFunc is the signature of a transfer guard function
-	CanTransferFunc func(StateDB, common.Address, *big.Int) bool
+	CanTransferFunc func(StateDB, common.Address, *uint256.Int) bool
 	// TransferFunc is the signature of a transfer function
-	TransferFunc func(StateDB, common.Address, common.Address, *big.Int, *firehose.Context)
+	TransferFunc func(StateDB, common.Address, common.Address, *uint256.Int, *firehose.Context)
 	// GetHashFunc returns the n'th block hash in the blockchain
 	// and is used by the BLOCKHASH EVM op code.
 	GetHashFunc func(uint64) common.Hash
@@ -185,12 +185,11 @@ func (evm *EVM) Interpreter() *EVMInterpreter {
 // parameters. It also handles any necessary value transfer required and takes
 // the necessary steps to create accounts and reverses the state in case of an
 // execution error or failed value transfer.
-func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas uint64, value *big.Int) (ret []byte, leftOverGas uint64, err error) {
+func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas uint64, value *uint256.Int) (ret []byte, leftOverGas uint64, err error) {
 	if evm.firehoseContext.Enabled() {
 		evm.firehoseContext.StartCall("CALL")
-		evm.firehoseContext.RecordCallParams("CALL", caller.Address(), addr, value, gas, input)
+		evm.firehoseContext.RecordCallParams("CALL", caller.Address(), addr, value.ToBig(), gas, input)
 	}
-
 	// Fail if we're trying to execute above the call depth limit
 	if evm.depth > int(params.CallCreateDepth) {
 		if evm.firehoseContext.Enabled() {
@@ -216,10 +215,10 @@ func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas 
 			// Calling a non existing account, don't do anything, but ping the tracer
 			if debug {
 				if evm.depth == 0 {
-					evm.Config.Tracer.CaptureStart(evm, caller.Address(), addr, false, input, gas, value)
+					evm.Config.Tracer.CaptureStart(evm, caller.Address(), addr, false, input, gas, value.ToBig())
 					evm.Config.Tracer.CaptureEnd(ret, 0, nil)
 				} else {
-					evm.Config.Tracer.CaptureEnter(CALL, caller.Address(), addr, input, gas, value)
+					evm.Config.Tracer.CaptureEnter(CALL, caller.Address(), addr, input, gas, value.ToBig())
 					evm.Config.Tracer.CaptureExit(ret, 0, nil)
 				}
 			}
@@ -237,13 +236,13 @@ func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas 
 	// Capture the tracer start/end events in debug mode
 	if debug {
 		if evm.depth == 0 {
-			evm.Config.Tracer.CaptureStart(evm, caller.Address(), addr, false, input, gas, value)
+			evm.Config.Tracer.CaptureStart(evm, caller.Address(), addr, false, input, gas, value.ToBig())
 			defer func(startGas uint64) { // Lazy evaluation of the parameters
 				evm.Config.Tracer.CaptureEnd(ret, startGas-gas, err)
 			}(gas)
 		} else {
 			// Handle tracer events for entering and exiting a call frame
-			evm.Config.Tracer.CaptureEnter(CALL, caller.Address(), addr, input, gas, value)
+			evm.Config.Tracer.CaptureEnter(CALL, caller.Address(), addr, input, gas, value.ToBig())
 			defer func(startGas uint64) {
 				evm.Config.Tracer.CaptureExit(ret, startGas-gas, err)
 			}(gas)
@@ -311,10 +310,10 @@ func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas 
 //
 // CallCode differs from Call in the sense that it executes the given address'
 // code with the caller as context.
-func (evm *EVM) CallCode(caller ContractRef, addr common.Address, input []byte, gas uint64, value *big.Int) (ret []byte, leftOverGas uint64, err error) {
+func (evm *EVM) CallCode(caller ContractRef, addr common.Address, input []byte, gas uint64, value *uint256.Int) (ret []byte, leftOverGas uint64, err error) {
 	if evm.firehoseContext.Enabled() {
 		evm.firehoseContext.StartCall("CALLCODE")
-		evm.firehoseContext.RecordCallParams("CALLCODE", caller.Address(), addr, value, gas, input)
+		evm.firehoseContext.RecordCallParams("CALLCODE", caller.Address(), addr, value.ToBig(), gas, input)
 	}
 	// Fail if we're trying to execute above the call depth limit
 	if evm.depth > int(params.CallCreateDepth) {
@@ -340,7 +339,7 @@ func (evm *EVM) CallCode(caller ContractRef, addr common.Address, input []byte, 
 
 	// Invoke tracer hooks that signal entering/exiting a call frame
 	if evm.Config.Tracer != nil {
-		evm.Config.Tracer.CaptureEnter(CALLCODE, caller.Address(), addr, input, gas, value)
+		evm.Config.Tracer.CaptureEnter(CALLCODE, caller.Address(), addr, input, gas, value.ToBig())
 		defer func(startGas uint64) {
 			evm.Config.Tracer.CaptureExit(ret, startGas-gas, err)
 		}(gas)
@@ -408,7 +407,7 @@ func (evm *EVM) DelegateCall(caller ContractRef, addr common.Address, input []by
 
 		// It's a sure thing that caller is a Contract, it cannot be anything else, so we are safe
 		parent := caller.(*Contract)
-		evm.firehoseContext.RecordCallParams("DELEGATE", parent.Address(), addr, parent.value, gas, input)
+		evm.firehoseContext.RecordCallParams("DELEGATE", parent.Address(), addr, parent.value.ToBig(), gas, input)
 	}
 	// Fail if we're trying to execute above the call depth limit
 	if evm.depth > int(params.CallCreateDepth) {
@@ -427,7 +426,7 @@ func (evm *EVM) DelegateCall(caller ContractRef, addr common.Address, input []by
 		// that caller is something other than a Contract.
 		parent := caller.(*Contract)
 		// DELEGATECALL inherits value from parent call
-		evm.Config.Tracer.CaptureEnter(DELEGATECALL, caller.Address(), addr, input, gas, parent.value)
+		evm.Config.Tracer.CaptureEnter(DELEGATECALL, caller.Address(), addr, input, gas, parent.value.ToBig())
 		defer func(startGas uint64) {
 			evm.Config.Tracer.CaptureExit(ret, startGas-gas, err)
 		}(gas)
@@ -500,7 +499,7 @@ func (evm *EVM) StaticCall(caller ContractRef, addr common.Address, input []byte
 	// This doesn't matter on Mainnet, where all empties are gone at the time of Byzantium,
 	// but is the correct thing to do and matters on other networks, in tests, and potential
 	// future scenarios
-	evm.StateDB.AddBalance(addr, big0, isPrecompile, evm.firehoseContext, firehose.IgnoredBalanceChangeReason)
+	evm.StateDB.AddBalance(addr, new(uint256.Int), isPrecompile, evm.firehoseContext, firehose.IgnoredBalanceChangeReason)
 
 	// Invoke tracer hooks that signal entering/exiting a call frame
 	if evm.Config.Tracer != nil {
@@ -519,7 +518,7 @@ func (evm *EVM) StaticCall(caller ContractRef, addr common.Address, input []byte
 		addrCopy := addr
 		// Initialise a new contract and set the code that is to be used by the EVM.
 		// The contract is a scoped environment for this execution context only.
-		contract := NewContract(caller, AccountRef(addrCopy), new(big.Int), gas, evm.firehoseContext)
+		contract := NewContract(caller, AccountRef(addrCopy), new(uint256.Int), gas, evm.firehoseContext)
 		contract.SetCallCode(&addrCopy, evm.StateDB.GetCodeHash(addrCopy), evm.StateDB.GetCode(addrCopy))
 		// When an error was returned by the EVM or when setting the creation code
 		// above we revert to the snapshot and consume any gas remaining. Additionally
@@ -566,12 +565,11 @@ func (c *codeAndHash) Hash() common.Hash {
 }
 
 // create creates a new contract using code as deployment code.
-func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64, value *big.Int, address common.Address, typ OpCode) ([]byte, common.Address, uint64, error) {
+func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64, value *uint256.Int, address common.Address, typ OpCode) ([]byte, common.Address, uint64, error) {
 	if evm.firehoseContext.Enabled() {
 		evm.firehoseContext.StartCall("CREATE")
-		evm.firehoseContext.RecordCallParams("CREATE", caller.Address(), address, value, gas, nil)
+		evm.firehoseContext.RecordCallParams("CREATE", caller.Address(), address, value.ToBig(), gas, nil)
 	}
-
 	// Depth check execution. Fail if we're trying to execute above the
 	// limit.
 	if evm.depth > int(params.CallCreateDepth) {
@@ -633,9 +631,9 @@ func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64,
 
 	if evm.Config.Tracer != nil {
 		if evm.depth == 0 {
-			evm.Config.Tracer.CaptureStart(evm, caller.Address(), address, true, codeAndHash.code, gas, value)
+			evm.Config.Tracer.CaptureStart(evm, caller.Address(), address, true, codeAndHash.code, gas, value.ToBig())
 		} else {
-			evm.Config.Tracer.CaptureEnter(typ, caller.Address(), address, codeAndHash.code, gas, value)
+			evm.Config.Tracer.CaptureEnter(typ, caller.Address(), address, codeAndHash.code, gas, value.ToBig())
 		}
 	}
 
@@ -698,7 +696,7 @@ func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64,
 }
 
 // Create creates a new contract using code as deployment code.
-func (evm *EVM) Create(caller ContractRef, code []byte, gas uint64, value *big.Int) (ret []byte, contractAddr common.Address, leftOverGas uint64, err error) {
+func (evm *EVM) Create(caller ContractRef, code []byte, gas uint64, value *uint256.Int) (ret []byte, contractAddr common.Address, leftOverGas uint64, err error) {
 	contractAddr = crypto.CreateAddress(caller.Address(), evm.StateDB.GetNonce(caller.Address()))
 	return evm.create(caller, &codeAndHash{code: code}, gas, value, contractAddr, CREATE)
 }
@@ -707,7 +705,7 @@ func (evm *EVM) Create(caller ContractRef, code []byte, gas uint64, value *big.I
 //
 // The different between Create2 with Create is Create2 uses keccak256(0xff ++ msg.sender ++ salt ++ keccak256(init_code))[12:]
 // instead of the usual sender-and-nonce-hash as the address where the contract is initialized at.
-func (evm *EVM) Create2(caller ContractRef, code []byte, gas uint64, endowment *big.Int, salt *uint256.Int) (ret []byte, contractAddr common.Address, leftOverGas uint64, err error) {
+func (evm *EVM) Create2(caller ContractRef, code []byte, gas uint64, endowment *uint256.Int, salt *uint256.Int) (ret []byte, contractAddr common.Address, leftOverGas uint64, err error) {
 	codeAndHash := &codeAndHash{code: code}
 	contractAddr = crypto.CreateAddress2(caller.Address(), salt.Bytes32(), codeAndHash.Hash().Bytes())
 	return evm.create(caller, codeAndHash, gas, endowment, contractAddr, CREATE2)

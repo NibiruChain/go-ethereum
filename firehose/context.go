@@ -257,6 +257,10 @@ func (ctx *Context) StartSystemCall() {
 }
 
 func (ctx *Context) EndSystemCall() {
+	if ctx == nil {
+		return
+	}
+
 	if !ctx.inBlock.Load() {
 		panic("ending system call while not already within a block scope")
 	}

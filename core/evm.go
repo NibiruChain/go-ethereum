@@ -25,6 +25,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/firehose"
+	"github.com/holiman/uint256"
 )
 
 // ChainContext supports retrieving headers and consensus parameters from the
@@ -130,12 +131,12 @@ func GetHashFn(ref *types.Header, chain ChainContext) func(n uint64) common.Hash
 
 // CanTransfer checks whether there are enough funds in the address' account to make a transfer.
 // This does not take the necessary gas in to account to make the transfer valid.
-func CanTransfer(db vm.StateDB, addr common.Address, amount *big.Int) bool {
+func CanTransfer(db vm.StateDB, addr common.Address, amount *uint256.Int) bool {
 	return db.GetBalance(addr).Cmp(amount) >= 0
 }
 
 // Transfer subtracts amount from sender and adds amount to recipient using the given Db
-func Transfer(db vm.StateDB, sender, recipient common.Address, amount *big.Int, firehoseContext *firehose.Context) {
+func Transfer(db vm.StateDB, sender, recipient common.Address, amount *uint256.Int, firehoseContext *firehose.Context) {
 	db.SubBalance(sender, amount, firehoseContext, firehose.BalanceChangeReason("transfer"))
 	db.AddBalance(recipient, amount, false, firehoseContext, firehose.BalanceChangeReason("transfer"))
 }

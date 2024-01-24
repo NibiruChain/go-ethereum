@@ -39,6 +39,7 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/trie"
 	"github.com/ethereum/go-ethereum/trie/triedb/pathdb"
+	"github.com/holiman/uint256"
 )
 
 //go:generate go run github.com/fjl/gencodec -type Genesis -field-override genesisSpecMarshaling -out gen_genesis.go
@@ -147,7 +148,7 @@ func (ga *GenesisAlloc) hash(isVerkle bool) (common.Hash, error) {
 
 	for addr, account := range *ga {
 		if account.Balance != nil {
-			statedb.AddBalance(addr, account.Balance, false, firehoseContext, firehose.IgnoredBalanceChangeReason)
+			statedb.AddBalance(addr, uint256.MustFromBig(account.Balance), false, firehoseContext, firehose.IgnoredBalanceChangeReason)
 		}
 		statedb.SetCode(addr, account.Code, firehoseContext)
 		statedb.SetNonce(addr, account.Nonce, firehoseContext)
@@ -172,7 +173,7 @@ func (ga *GenesisAlloc) flush(db ethdb.Database, triedb *trie.Database, blockhas
 
 	for addr, account := range *ga {
 		if account.Balance != nil {
-			statedb.AddBalance(addr, account.Balance, false, firehose.NoOpContext, firehose.IgnoredBalanceChangeReason)
+			statedb.AddBalance(addr, uint256.MustFromBig(account.Balance), false, firehose.NoOpContext, firehose.IgnoredBalanceChangeReason)
 		}
 		statedb.SetCode(addr, account.Code, firehose.NoOpContext)
 		statedb.SetNonce(addr, account.Nonce, firehose.NoOpContext)

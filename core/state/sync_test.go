@@ -18,7 +18,6 @@ package state
 
 import (
 	"bytes"
-	"math/big"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -31,12 +30,13 @@ import (
 	"github.com/ethereum/go-ethereum/trie"
 	"github.com/ethereum/go-ethereum/trie/triedb/hashdb"
 	"github.com/ethereum/go-ethereum/trie/triedb/pathdb"
+	"github.com/holiman/uint256"
 )
 
 // testAccount is the data associated with an account used by the state tests.
 type testAccount struct {
 	address common.Address
-	balance *big.Int
+	balance *uint256.Int
 	nonce   uint64
 	code    []byte
 }
@@ -58,11 +58,11 @@ func makeTestState(scheme string) (ethdb.Database, Database, *trie.Database, com
 	// Fill it with some arbitrary data
 	var accounts []*testAccount
 	for i := byte(0); i < 96; i++ {
-		obj := state.GetOrNewStateObject(common.BytesToAddress([]byte{i}), false, firehose.NoOpContext)
+		obj := state.getOrNewStateObject(common.BytesToAddress([]byte{i}), false, firehose.NoOpContext)
 		acc := &testAccount{address: common.BytesToAddress([]byte{i})}
 
-		obj.AddBalance(big.NewInt(int64(11*i)), firehose.NoOpContext, "test")
-		acc.balance = big.NewInt(int64(11 * i))
+		obj.AddBalance(uint256.NewInt(uint64(11*i)), firehose.NoOpContext, "test")
+		acc.balance = uint256.NewInt(uint64(11 * i))
 
 		obj.SetNonce(uint64(42*i), firehose.NoOpContext)
 		acc.nonce = uint64(42 * i)

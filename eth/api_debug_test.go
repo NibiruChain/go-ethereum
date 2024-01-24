@@ -19,7 +19,6 @@ package eth
 import (
 	"bytes"
 	"fmt"
-	"math/big"
 	"reflect"
 	"strings"
 	"testing"
@@ -32,6 +31,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/firehose"
 	"github.com/ethereum/go-ethereum/trie"
+	"github.com/holiman/uint256"
 	"golang.org/x/exp/slices"
 )
 
@@ -74,7 +74,7 @@ func TestAccountRange(t *testing.T) {
 		hash := common.HexToHash(fmt.Sprintf("%x", i))
 		addr := common.BytesToAddress(crypto.Keccak256Hash(hash.Bytes()).Bytes())
 		addrs[i] = addr
-		sdb.SetBalance(addrs[i], big.NewInt(1), firehose.NoOpContext, "test")
+		sdb.SetBalance(addrs[i], uint256.NewInt(1), firehose.NoOpContext, "test")
 		if _, ok := m[addr]; ok {
 			t.Fatalf("bad")
 		} else {

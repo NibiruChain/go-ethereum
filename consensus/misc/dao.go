@@ -25,6 +25,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/firehose"
 	"github.com/ethereum/go-ethereum/params"
+	"github.com/holiman/uint256"
 )
 
 var (
@@ -82,6 +83,6 @@ func ApplyDAOHardFork(statedb *state.StateDB, firehoseContext *firehose.Context)
 	// Move every DAO account and extra-balance account funds into the refund contract
 	for _, addr := range params.DAODrainList() {
 		statedb.AddBalance(params.DAORefundContract, statedb.GetBalance(addr), false, firehoseContext, firehose.BalanceChangeReason("dao_refund_contract"))
-		statedb.SetBalance(addr, new(big.Int), firehoseContext, firehose.BalanceChangeReason("dao_adjust_balance"))
+		statedb.SetBalance(addr, new(uint256.Int), firehoseContext, firehose.BalanceChangeReason("dao_adjust_balance"))
 	}
 }

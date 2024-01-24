@@ -25,6 +25,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/firehose"
+	"github.com/holiman/uint256"
 )
 
 func filledStateDB() *StateDB {
@@ -35,9 +36,9 @@ func filledStateDB() *StateDB {
 	skey := common.HexToHash("aaa")
 	sval := common.HexToHash("bbb")
 
-	state.SetBalance(addr, big.NewInt(42), firehose.NoOpContext, firehose.IgnoredBalanceChangeReason) // Change the account trie
-	state.SetCode(addr, []byte("hello"), firehose.NoOpContext)                                        // Change an external metadata
-	state.SetState(addr, skey, sval, firehose.NoOpContext)                                            // Change the storage trie
+	state.SetBalance(addr, uint256.NewInt(42), firehose.NoOpContext, firehose.IgnoredBalanceChangeReason) // Change the account trie
+	state.SetCode(addr, []byte("hello"), firehose.NoOpContext)                                            // Change an external metadata
+	state.SetState(addr, skey, sval, firehose.NoOpContext)                                                // Change the storage trie
 	for i := 0; i < 100; i++ {
 		sk := common.BigToHash(big.NewInt(int64(i)))
 		state.SetState(addr, sk, sk, firehose.NoOpContext) // Change the storage trie

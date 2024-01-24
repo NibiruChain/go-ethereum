@@ -17,8 +17,6 @@
 package vm
 
 import (
-	"math/big"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/firehose"
 	"github.com/holiman/uint256"
@@ -60,15 +58,14 @@ type Contract struct {
 	Input    []byte
 
 	Gas   uint64
-	value *big.Int
+	value *uint256.Int
 
 	firehoseContext *firehose.Context
 }
 
 // NewContract returns a new contract environment for the execution of EVM.
-func NewContract(caller ContractRef, object ContractRef, value *big.Int, gas uint64, firehoseContext *firehose.Context) *Contract {
+func NewContract(caller ContractRef, object ContractRef, value *uint256.Int, gas uint64, firehoseContext *firehose.Context) *Contract {
 	c := &Contract{CallerAddress: caller.Address(), caller: caller, self: object, firehoseContext: firehoseContext}
-
 	if parent, ok := caller.(*Contract); ok {
 		// Reuse JUMPDEST analysis from parent context if available.
 		c.jumpdests = parent.jumpdests
@@ -181,7 +178,7 @@ func (c *Contract) Address() common.Address {
 }
 
 // Value returns the contract's value (sent to it from it's caller)
-func (c *Contract) Value() *big.Int {
+func (c *Contract) Value() *uint256.Int {
 	return c.value
 }
 

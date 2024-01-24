@@ -22,7 +22,6 @@ import (
 	"errors"
 	"fmt"
 	"math"
-	"math/big"
 	"math/rand"
 	"reflect"
 	"strings"
@@ -39,6 +38,7 @@ import (
 	"github.com/ethereum/go-ethereum/trie"
 	"github.com/ethereum/go-ethereum/trie/triedb/pathdb"
 	"github.com/ethereum/go-ethereum/trie/triestate"
+	"github.com/holiman/uint256"
 )
 
 // A stateTest checks that the state changes are correctly captured. Instances
@@ -61,7 +61,7 @@ func newStateTestAction(addr common.Address, r *rand.Rand, index int) testAction
 		{
 			name: "SetBalance",
 			fn: func(a testAction, s *StateDB) {
-				s.SetBalance(addr, big.NewInt(a.args[0]), firehose.NoOpContext, "test")
+				s.SetBalance(addr, uint256.NewInt(uint64(a.args[0])), firehose.NoOpContext, "test")
 			},
 			args: make([]int64, 1),
 		},

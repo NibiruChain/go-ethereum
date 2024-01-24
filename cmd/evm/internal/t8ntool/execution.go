@@ -37,6 +37,7 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/trie"
+	"github.com/holiman/uint256"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -309,15 +310,15 @@ func (pre *Prestate) Apply(vmConfig vm.Config, chainConfig *params.ChainConfig,
 			reward.Sub(reward, new(big.Int).SetUint64(ommer.Delta))
 			reward.Mul(reward, blockReward)
 			reward.Div(reward, big.NewInt(8))
-			statedb.AddBalance(ommer.Address, reward, false, firehose.NoOpContext, "test")
+			statedb.AddBalance(ommer.Address, uint256.MustFromBig(reward), false, firehose.NoOpContext, "test")
 		}
-		statedb.AddBalance(pre.Env.Coinbase, minerReward, false, firehose.NoOpContext, "test")
+		statedb.AddBalance(pre.Env.Coinbase, uint256.MustFromBig(minerReward), false, firehose.NoOpContext, "test")
 	}
 	// Apply withdrawals
 	for _, w := range pre.Env.Withdrawals {
 		// Amount is in gwei, turn into wei
 		amount := new(big.Int).Mul(new(big.Int).SetUint64(w.Amount), big.NewInt(params.GWei))
-		statedb.AddBalance(w.Address, amount, false, firehose.NoOpContext, "test")
+		statedb.AddBalance(w.Address, uint256.MustFromBig(amount), false, firehose.NoOpContext, "test")
 	}
 	// Commit block
 	root, err := statedb.Commit(vmContext.BlockNumber.Uint64(), chainConfig.IsEIP158(vmContext.BlockNumber))
@@ -360,7 +361,7 @@ func MakePreState(db ethdb.Database, accounts core.GenesisAlloc) *state.StateDB 
 	for addr, a := range accounts {
 		statedb.SetCode(addr, a.Code, firehose.NoOpContext)
 		statedb.SetNonce(addr, a.Nonce, firehose.NoOpContext)
-		statedb.SetBalance(addr, a.Balance, firehose.NoOpContext, "test")
+		statedb.SetBalance(addr, uint256.MustFromBig(a.Balance), firehose.NoOpContext, "test")
 		for k, v := range a.Storage {
 			statedb.SetState(addr, k, v, firehose.NoOpContext)
 		}
