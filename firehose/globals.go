@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"reflect"
-	"strconv"
 
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/params"
@@ -57,9 +56,6 @@ var GenesisConfig interface{}
 // This setting will cause the "Last Finalized Block" (LIB) set to follow each block that we process.
 var ReprocessingWithSyncTarget = false
 
-// ForceFinalizedBlockAboveThreshold can be used to assume that a part of the chain is finalized when a certain number of confirmations have passed, even when the beacon chain is drifting.
-var ForceFinalizedBlockAboveThreshold = uint64(0)
-
 var MissingGenesisPanicMessage = "Firehose requires to have the genesis config to properly emit genesis block for this chain " +
 	"but it appears it was not set properly. Ensure you are using either chain's specific flag like " +
 	"'--mainnet' or if using a custom network, you can use '--firehose-genesis' flag to provide. Firehose " +
@@ -107,13 +103,6 @@ func Init(
 
 			GenesisConfig = genesis
 			genesisProvenance = "Firehose Specific Flag (--firehose-genesis <file>)"
-		}
-	}
-
-	if forceFinalized := os.Getenv("FORCE_FINALIZED_BLOCK_ABOVE_THRESHOLD"); forceFinalized != "" {
-		thresh, err := strconv.ParseUint(forceFinalized, 10, 64)
-		if err == nil && thresh > 0 {
-			ForceFinalizedBlockAboveThreshold = thresh
 		}
 	}
 

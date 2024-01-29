@@ -171,35 +171,6 @@ func (ctx *Context) FinalizeBlock(block *types.Block) {
 	ctx.printer.Print("FINALIZE_BLOCK", Uint64(block.NumberU64()))
 }
 
-type blockGetter func(uint64) *types.Block
-
-func LastFinalBlock(currentBlock *types.Block, candidateLIB *types.Header, getBlockByNum blockGetter) *types.Header {
-	if ReprocessingWithSyncTarget {
-		return currentBlock.Header()
-	}
-
-	currentNum := currentBlock.NumberU64()
-	if candidateLIB != nil &&
-		candidateLIB.Number.Uint64() <= currentNum &&
-		(ForceFinalizedBlockAboveThreshold == 0 || candidateLIB.Number.Uint64()+ForceFinalizedBlockAboveThreshold > currentNum) {
-		return candidateLIB
-	}
-
-	if ForceFinalizedBlockAboveThreshold == 0 {
-		return nil
-	}
-
-	if currentNum < ForceFinalizedBlockAboveThreshold {
-		return nil
-	}
-
-	blk := getBlockByNum(currentNum - 200)
-	if blk != nil {
-		return blk.Header()
-	}
-	return nil
-}
-
 func (ctx *Context) EndBlock(block *types.Block, finalBlockHeader *types.Header, totalDifficulty *big.Int) {
 	endData := map[string]interface{}{
 		"header":          block.Header(),
