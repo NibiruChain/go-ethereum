@@ -186,7 +186,7 @@ func makeTx(nonce uint64, gasTipCap uint64, gasFeeCap uint64, blobFeeCap uint64,
 	return types.MustSignNewTx(key, types.LatestSigner(testChainConfig), blobtx)
 }
 
-// makeUnsignedTx is a utility method to construct a random blob tranasaction
+// makeUnsignedTx is a utility method to construct a random blob transaction
 // without signing it.
 func makeUnsignedTx(nonce uint64, gasTipCap uint64, gasFeeCap uint64, blobFeeCap uint64) *types.BlobTx {
 	return &types.BlobTx{
@@ -392,7 +392,7 @@ func TestOpenDrops(t *testing.T) {
 		id, _ := store.Put(blob)
 		filled[id] = struct{}{}
 	}
-	// Insert a sequence of transactions with partially passed nonces to veirfy
+	// Insert a sequence of transactions with partially passed nonces to verify
 	// that the included part of the set will get dropped (case 4).
 	var (
 		overlapper, _ = crypto.GenerateKey()
@@ -568,7 +568,7 @@ func TestOpenDrops(t *testing.T) {
 		statedb: statedb,
 	}
 	pool := New(Config{Datadir: storage}, chain)
-	if err := pool.Init(big.NewInt(1), chain.CurrentBlock(), makeAddressReserver()); err != nil {
+	if err := pool.Init(1, chain.CurrentBlock(), makeAddressReserver()); err != nil {
 		t.Fatalf("failed to create blob pool: %v", err)
 	}
 	defer pool.Close()
@@ -687,7 +687,7 @@ func TestOpenIndex(t *testing.T) {
 		statedb: statedb,
 	}
 	pool := New(Config{Datadir: storage}, chain)
-	if err := pool.Init(big.NewInt(1), chain.CurrentBlock(), makeAddressReserver()); err != nil {
+	if err := pool.Init(1, chain.CurrentBlock(), makeAddressReserver()); err != nil {
 		t.Fatalf("failed to create blob pool: %v", err)
 	}
 	defer pool.Close()
@@ -789,7 +789,7 @@ func TestOpenHeap(t *testing.T) {
 		statedb: statedb,
 	}
 	pool := New(Config{Datadir: storage}, chain)
-	if err := pool.Init(big.NewInt(1), chain.CurrentBlock(), makeAddressReserver()); err != nil {
+	if err := pool.Init(1, chain.CurrentBlock(), makeAddressReserver()); err != nil {
 		t.Fatalf("failed to create blob pool: %v", err)
 	}
 	defer pool.Close()
@@ -869,7 +869,7 @@ func TestOpenCap(t *testing.T) {
 			statedb: statedb,
 		}
 		pool := New(Config{Datadir: storage, Datacap: datacap}, chain)
-		if err := pool.Init(big.NewInt(1), chain.CurrentBlock(), makeAddressReserver()); err != nil {
+		if err := pool.Init(1, chain.CurrentBlock(), makeAddressReserver()); err != nil {
 			t.Fatalf("failed to create blob pool: %v", err)
 		}
 		// Verify that enough transactions have been dropped to get the pool's size
@@ -1271,7 +1271,7 @@ func TestAdd(t *testing.T) {
 			statedb: statedb,
 		}
 		pool := New(Config{Datadir: storage}, chain)
-		if err := pool.Init(big.NewInt(1), chain.CurrentBlock(), makeAddressReserver()); err != nil {
+		if err := pool.Init(1, chain.CurrentBlock(), makeAddressReserver()); err != nil {
 			t.Fatalf("test %d: failed to create blob pool: %v", i, err)
 		}
 		verifyPoolInternals(t, pool)
@@ -1287,5 +1287,67 @@ func TestAdd(t *testing.T) {
 		// Verify the pool internals and close down the test
 		verifyPoolInternals(t, pool)
 		pool.Close()
+	}
+}
+
+// Benchmarks the time it takes to assemble the lazy pending transaction list
+// from the pool contents.
+func BenchmarkPoolPending100Mb(b *testing.B) { benchmarkPoolPending(b, 100_000_000) }
+func BenchmarkPoolPending1GB(b *testing.B)   { benchmarkPoolPending(b, 1_000_000_000) }
+func BenchmarkPoolPending10GB(b *testing.B)  { benchmarkPoolPending(b, 10_000_000_000) }
+
+func benchmarkPoolPending(b *testing.B, datacap uint64) {
+	// Calculate the maximum number of transaction that would fit into the pool
+	// and generate a set of random accounts to seed them with.
+	capacity := datacap / params.BlobTxBlobGasPerBlob
+
+	var (
+		basefee    = uint64(1050)
+		blobfee    = uint64(105)
+		signer     = types.LatestSigner(testChainConfig)
+		statedb, _ = state.New(types.EmptyRootHash, state.NewDatabase(rawdb.NewDatabase(memorydb.New())), nil)
+		chain      = &testBlockChain{
+			config:  testChainConfig,
+			basefee: uint256.NewInt(basefee),
+			blobfee: uint256.NewInt(blobfee),
+			statedb: statedb,
+		}
+		pool = New(Config{Datadir: ""}, chain)
+	)
+
+	if err := pool.Init(1, chain.CurrentBlock(), makeAddressReserver()); err != nil {
+		b.Fatalf("failed to create blob pool: %v", err)
+	}
+	// Fill the pool up with one random transaction from each account with the
+	// same price and everything to maximize the worst case scenario
+	for i := 0; i < int(capacity); i++ {
+		blobtx := makeUnsignedTx(0, 10, basefee+10, blobfee)
+		blobtx.R = uint256.NewInt(1)
+		blobtx.S = uint256.NewInt(uint64(100 + i))
+		blobtx.V = uint256.NewInt(0)
+		tx := types.NewTx(blobtx)
+		addr, err := types.Sender(signer, tx)
+		if err != nil {
+			b.Fatal(err)
+		}
+		statedb.AddBalance(addr, uint256.NewInt(1_000_000_000), false, firehose.NoOpContext, "test")
+		pool.add(tx)
+	}
+	statedb.Commit(0, true)
+	defer pool.Close()
+
+	// Benchmark assembling the pending
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		p := pool.Pending(txpool.PendingFilter{
+			MinTip:  uint256.NewInt(1),
+			BaseFee: chain.basefee,
+			BlobFee: chain.blobfee,
+		})
+		if len(p) != int(capacity) {
+			b.Fatalf("have %d want %d", len(p), capacity)
+		}
 	}
 }
