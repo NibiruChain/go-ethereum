@@ -7,7 +7,7 @@ This is our Firehose instrumented fork of [ethereum/go-ethereum](https://github.
 The Firehose instrumentation have a protocol version for the messages exchanges with Firehose on Ethereum binary (`fireeth`). The
 protocols we currently develop are:
 
-- Protocol `fh2.3` using the `firehose-fh2.3` branch and `fh2.3` tag(s) suffix
+- Protocol `fh2.4` using the `firehose-fh2.4` branch and `fh2.4` tag(s) suffix
 - Protocol `fh3.0` using the `firehose-fh3.0` branch and `fh3.0` tag(s) suffix
 
   > [!NOTE]
@@ -23,12 +23,12 @@ the same names and settings.
 
 ```
 cd ~/work
-git clone --branch="firehose-fh2.3" git@github.com:streamingfast/go-ethereum.git
+git clone --branch="firehose-fh2.4" git@github.com:streamingfast/go-ethereum.git
 cd go-ethereum
 
 git remote rename origin sf
 
-git checkout firehose-fh2.3
+git checkout firehose-fh2.4
 
 git remote add origin https://github.com/ethereum/go-ethereum.git
 git remote add polygon https://github.com/maticnetwork/bor.git
@@ -38,9 +38,9 @@ git fetch origin
 git fetch polygon
 git fetch bsc
 
-git checkout release/geth-1.x-fh2.3
-git checkout release/bsc-1.x-fh2.2
-git checkout release/polygon-0.x-fh2.3
+git checkout release/geth-1.x-fh2.4
+git checkout release/bsc-1.x-fh2.5
+git checkout release/polygon-1.x-fh2.4
 ```
 
 ##### Assumptions
@@ -60,7 +60,7 @@ for Firehose consumption.
 
 We use merging of the branches into one another to make that work manageable.
 The first and foremost important rule is that we always put new development
-in the `firehose-fh2.3` branch.
+in the `firehose-fh2.4` branch.
 
 This branch must always be tracking the lowest supported version of all. Indeed,
 this is our "work" branch for our patches, **new development must go there**. If you
@@ -75,37 +75,37 @@ for us, versions that we will manages and deploy.
 
 Currently supported forks & version and the release branch
 
-- `firehose-fh2.3` - Default branch with all Firehose commits in it, based on Geth `1.10.1`.
-- [release/geth-1.x-fh2.3](https://github.com/streamingfast/go-ethereum/tree/release/geth-1.x-fh2.3) - Ethereum Geth, latest update for this branch is `1.10.7` ([https://github.com/ethereum/go-ethereum](https://github.com/ethereum/go-ethereum)).
-- [release/polygon-0.x-fh2.3](https://github.com/streamingfast/go-ethereum/tree/release/polygon-0.x-fh2.3) - Polygon fork (a.k.a Matic), based on Geth `1.10.3`, latest update for this branch is `v0.3.2` ([https://github.com/maticnetwork/bor](https://github.com/maticnetwork/bor)).
-- [release/bsc-1.x-fh2.2](https://github.com/streamingfast/go-ethereum/tree/release/bsc-1.x-fh2.2) - BSC fork (Binance), based on Geth `1.10.22`, latest update for this branch is `v1.1.18` ([https://github.com/binance-chain/bsc](https://github.com/binance-chain/bsc)).
+- `firehose-fh2.4` - Default branch with all Firehose commits in it, based on Geth `1.10.1`.
+- [release/geth-1.x-fh2.4](https://github.com/streamingfast/go-ethereum/tree/release/geth-1.x-fh2.4) - Ethereum Geth, latest update for this branch is `1.13.14` ([https://github.com/ethereum/go-ethereum](https://github.com/ethereum/go-ethereum)).
+- [release/polygon-1.x-fh2.4](https://github.com/streamingfast/go-ethereum/tree/release/polygon-1.x-fh2.4) - Polygon fork (a.k.a Matic), based on Geth `1.13.5`, latest update for this branch is `v1.3.0` ([https://github.com/maticnetwork/bor](https://github.com/maticnetwork/bor)).
+- [release/bsc-1.x-fh2.5](https://github.com/streamingfast/go-ethereum/tree/release/bsc-1.x-fh2.5) - BSC fork (Binance), based on Geth `1.13.5`, latest update for this branch is `v1.4.5` ([https://github.com/binance-chain/bsc](https://github.com/binance-chain/bsc)).
 
 > **Note** To find on which Geth version a particular fork is, you can do `git merge-base sf/release/geth-1.x-fh2.3 origin/master` where `origin/master` is the `master` branch of the original Geth repository (https://github.com/ethereum/go-ethereum).
 
 #### Making New Firehose Changes
 
-Making new changes should be performed on the `firehose-fh2.3` branch. When happy
-with the changes, simply merge the `firehose-fh2.3` branch in all the release branches we track
+Making new changes should be performed on the `firehose-fh2.4` branch. When happy
+with the changes, simply merge the `firehose-fh2.4` branch in all the release branches we track
 and support.
 
-    git checkout firehose-fh2.3
+    git checkout firehose-fh2.4
     git pull -p
 
     # Perform necessary changes, tests and commit(s)
 
-    git checkout release/geth-1.x-fh2.3
+    git checkout release/geth-1.x-fh2.4
     git pull -p
-    git merge firehose-fh2.3
+    git merge firehose-fh2.4
 
-    git checkout release/polygon-0.x-fh2.3
+    git checkout release/polygon-1.x-fh2.4
     git pull -p
-    git merge firehose-fh2.3
+    git merge firehose-fh2.4
 
-    git checkout release/bsc-1.x-fh2.3
+    git checkout release/bsc-1.x-fh2.5
     git pull -p
-    git merge firehose-fh2.3
+    git merge firehose-fh2.4
 
-    git push sf firehose-fh2.3 release/geth-1.x-fh2.3 release/polygon-0.x-fh2.3 release/bsc-1.x-fh2.3
+    git push sf firehose-fh2.4 release/geth-1.x-fh2.4 release/polygon-1.x-fh2.4 release/bsc-1.x-fh2.4
 
 ### Update to New Upstream Version
 
@@ -120,7 +120,7 @@ those with your own values.
 First step is to checkout the release branch of the series you are currently
 updating to:
 
-    git checkout release/geth-1.x-fh2.3
+    git checkout release/geth-1.x-fh2.4
     git pull -p
 
 You first fetch the origin repository new data from Git:
@@ -134,18 +134,18 @@ Then apply the update
 Solve conflicts if any. Once all conflicts have been resolved, commit then
 create a tag with release
 
-    git tag geth-v1.10.18-fh2.3
+    git tag geth-v1.10.18-fh2.4
 
 Then push all that to the repository:
 
-    git push sf release/geth-1.x-fh2.3 geth-v1.10.18-fh2.3
+    git push sf release/geth-1.x-fh2.4 geth-v1.10.18-fh2.4
 
 > [!NOTE]
-> If you need to issue a Firehose bug fix for an existing version of upstream, for example a Firehose fix on `v1.10.8`, you append `-N` at the end where `N` is 1 then increments further is newer revisions are needed, so you would got tag `geth-v1.10.18-fh2.3-1`
+> If you need to issue a Firehose bug fix for an existing version of upstream, for example a Firehose fix on `v1.10.8`, you append `-N` at the end where `N` is 1 then increments further is newer revisions are needed, so you would got tag `geth-v1.10.18-fh2.4-1`
 
 ### Development
 
-All the *new* development should happen in the `firehose-fh2.3` branch, this is our own branch
+All the *new* development should happen in the `firehose-fh2.4` branch, this is our own branch
 containing our commits.
 
 ##### Build Locally
@@ -161,7 +161,7 @@ containing our commits.
 **Important** To correctly work, you need to use the right base branch, otherwise, it will be screwed up. The `firehose-v2`
 branch was based on `v1.10.1` at time of writing.
 
-* From `gitk`: `gitk --first-parent v1.10.1..firehose-fh2.3`
-* From terminal: `git log --decorate --pretty=oneline --abbrev-commit --first-parent=v1.10.1..firehose-fh2.3`
-* From `GitHub`: [https://github.com/streamingfast/go-ethereum/compare/v1.10.1...firehose-fh2.3](https://github.com/streamingfast/go-ethereum/compare/v1.9.23...firehose-fh2.3)
-* Modified files in our fork: `git diff --name-status v1.10.1..firehose-fh2.3 | grep -E "^M" | cut -d $'\t' -f 2`
+* From `gitk`: `gitk --first-parent v1.10.1..firehose-fh2.4`
+* From terminal: `git log --decorate --pretty=oneline --abbrev-commit --first-parent=v1.10.1..firehose-fh2.4`
+* From `GitHub`: [https://github.com/streamingfast/go-ethereum/compare/v1.10.1...firehose-fh2.4](https://github.com/streamingfast/go-ethereum/compare/v1.9.23...firehose-fh2.4)
+* Modified files in our fork: `git diff --name-status v1.10.1..firehose-fh2.4 | grep -E "^M" | cut -d $'\t' -f 2`

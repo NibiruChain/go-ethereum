@@ -50,14 +50,14 @@ func SyncContext() *Context {
 	return syncContext
 }
 
-func NewContext(printer Printer, speculative bool) *Context {
+func NewContext(printer Printer, transactionScopedContext bool) *Context {
 	ctx := &Context{
 		printer: printer,
 
-		isSpeculativeContext: speculative,
-		inBlock:              atomic.NewBool(false),
-		inTransaction:        atomic.NewBool(false),
-		totalOrderingCounter: atomic.NewUint64(0),
+		transactionScopedContext: transactionScopedContext,
+		inBlock:                  atomic.NewBool(false),
+		inTransaction:            atomic.NewBool(false),
+		totalOrderingCounter:     atomic.NewUint64(0),
 	}
 
 	ctx.resetBlock()
@@ -74,8 +74,8 @@ type Context struct {
 	printer Printer
 
 	// Global state
-	isSpeculativeContext bool
-	flushTxLock          sync.Mutex
+	transactionScopedContext bool
+	flushTxLock              sync.Mutex
 
 	// Block state (don't forget to update resetBlock!)
 	inBlock              *atomic.Bool
@@ -114,7 +114,16 @@ func NewSpeculativeExecutionContext(initialAllocationInBytes int) *Context {
 	return NewContext(NewToBufferPrinter(initialAllocationInBytes), true)
 }
 
-func NewSpeculativeExecutionContextWithBuffer(buffer *bytes.Buffer) *Context {
+// NewBlockContextWithBuffer creates a new block context with a buffer to accumulate the
+// firehose logs. This should be used when tracing a block.
+func NewBlockContextWithBuffer(buffer *bytes.Buffer) *Context {
+	return NewContext(NewToBufferPrinterWithBuffer(buffer), false)
+}
+
+// NewTransactionContextWithBuffer creates a new transaction context with a buffer to accumulate the
+// firehose logs. This should be used when tracing a standalone transaction that should later be
+// either emitted or flushed to a block context.
+func NewTransactionContextWithBuffer(buffer *bytes.Buffer) *Context {
 	return NewContext(NewToBufferPrinterWithBuffer(buffer), true)
 }
 
@@ -155,6 +164,7 @@ func (ctx *Context) RecordGenesisBlock(block *types.Block, recordGenesisAlloc fu
 	ctx.EndTransaction(&types.Receipt{PostState: root[:]})
 	ctx.FinalizeBlock(block)
 	ctx.EndBlock(block, nil, block.Difficulty())
+	ctx.FlushBlock()
 }
 
 func (ctx *Context) StartBlock(block *types.Block) {
@@ -207,7 +217,7 @@ func (ctx *Context) FlushBlock() {
 }
 
 // exitBlock is used when an abnormal condition is encountered while processing
-// transactions and we must end the block processing right away, resetting the start
+// transactions and we must end the block processing right away, resetting the state
 // along the way.
 func (ctx *Context) exitBlock() {
 	if !ctx.inBlock.Load() {
@@ -220,24 +230,37 @@ func (ctx *Context) exitBlock() {
 	ctx.resetTransaction()
 }
 
-// CancelBlock emit a Firehose CANCEL_BLOCK event that tells the console reader to discard any
-// accumulated block's data and start over. This happens on certains error conditions where the block
-// is actually invalid and will be re-processed by the chain so we should not record it.
-func (ctx *Context) CancelBlock(block *types.Block, err error) {
+func (ctx *Context) StartSystemCall() {
 	if ctx == nil {
 		return
 	}
 
-	// There is some particular runtime code path that could trigger a CANCEL_BLOCK without having started
-	// one, it's ok, the reader is resistant to such and here, we simply don't call `ExitBlock`.
-	if ctx.inBlock.Load() {
-		ctx.exitBlock()
+	if !ctx.inBlock.Load() {
+		panic("starting system call while not already within a block scope")
 	}
 
-	ctx.printer.Print("CANCEL_BLOCK",
-		Uint64(block.NumberU64()),
-		err.Error(),
-	)
+	if !ctx.inTransaction.CAS(false, true) {
+		panic("entering a system call while already in a transaction scope")
+	}
+
+	ctx.printer.Print("SYSTEM_CALL_START")
+}
+
+func (ctx *Context) EndSystemCall() {
+	if ctx == nil {
+		return
+	}
+
+	if !ctx.inBlock.Load() {
+		panic("ending system call while not already within a block scope")
+	}
+
+	if !ctx.inTransaction.CAS(true, false) {
+		panic("ending a system call while not in a transaction scope")
+	}
+
+	ctx.resetTransaction()
+	ctx.printer.Print("SYSTEM_CALL_END")
 }
 
 func (ctx *Context) StartSystemCall() {
@@ -535,7 +558,7 @@ func (ctx *Context) openCall() string {
 }
 
 func (ctx *Context) callIndex() string {
-	if !ctx.isSpeculativeContext && !ctx.inBlock.Load() {
+	if !ctx.transactionScopedContext && !ctx.inBlock.Load() {
 		debug.PrintStack()
 		panic("should have been call in a block or in speculative context, something is deeply wrong")
 	}
