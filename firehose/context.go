@@ -263,39 +263,6 @@ func (ctx *Context) EndSystemCall() {
 	ctx.printer.Print("SYSTEM_CALL_END")
 }
 
-func (ctx *Context) StartSystemCall() {
-	if ctx == nil {
-		return
-	}
-
-	if !ctx.inBlock.Load() {
-		panic("starting system call while not already within a block scope")
-	}
-
-	if !ctx.inTransaction.CAS(false, true) {
-		panic("entering a system call while already in a transaction scope")
-	}
-
-	ctx.printer.Print("SYSTEM_CALL_START")
-}
-
-func (ctx *Context) EndSystemCall() {
-	if ctx == nil {
-		return
-	}
-
-	if !ctx.inBlock.Load() {
-		panic("ending system call while not already within a block scope")
-	}
-
-	if !ctx.inTransaction.CAS(true, false) {
-		panic("ending a system call while not in a transaction scope")
-	}
-
-	ctx.resetTransaction()
-	ctx.printer.Print("SYSTEM_CALL_END")
-}
-
 // Transaction methods
 
 func (ctx *Context) StartTransaction(tx *types.Transaction, txIndex uint, baseFee *big.Int) {
