@@ -17,7 +17,9 @@
 package t8ntool
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -28,9 +30,11 @@ import (
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/state"
+	"github.com/ethereum/go-ethereum/core/tracing"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/eth/tracers"
 	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/ethereum/go-ethereum/firehose"
 	"github.com/ethereum/go-ethereum/log"
@@ -120,7 +124,7 @@ type rejectedTx struct {
 // Apply applies a set of transactions to a pre-state
 func (pre *Prestate) Apply(vmConfig vm.Config, chainConfig *params.ChainConfig,
 	txIt txIterator, miningReward int64,
-	getTracerFn func(txIndex int, txHash common.Hash) (vm.EVMLogger, error)) (*state.StateDB, *ExecutionResult, []byte, error) {
+	getTracerFn func(txIndex int, txHash common.Hash) (*tracers.Tracer, io.WriteCloser, error)) (*state.StateDB, *ExecutionResult, []byte, error) {
 	// Capture errors for BLOCKHASH operation, if we haven't been supplied the
 	// required blockhashes
 	var hashError error
@@ -170,7 +174,7 @@ func (pre *Prestate) Apply(vmConfig vm.Config, chainConfig *params.ChainConfig,
 	// Calculate the BlobBaseFee
 	var excessBlobGas uint64
 	if pre.Env.ExcessBlobGas != nil {
-		excessBlobGas := *pre.Env.ExcessBlobGas
+		excessBlobGas = *pre.Env.ExcessBlobGas
 		vmContext.BlobBaseFee = eip4844.CalcBlobFee(excessBlobGas)
 	} else {
 		// If it is not explicitly defined, but we have the parent values, we try
@@ -223,11 +227,13 @@ func (pre *Prestate) Apply(vmConfig vm.Config, chainConfig *params.ChainConfig,
 				continue
 			}
 		}
-		tracer, err := getTracerFn(txIndex, tx.Hash())
+		tracer, traceOutput, err := getTracerFn(txIndex, tx.Hash())
 		if err != nil {
 			return nil, nil, nil, err
 		}
-		vmConfig.Tracer = tracer
+		if tracer != nil {
+			vmConfig.Tracer = tracer.Hooks
+		}
 		statedb.SetTxContext(tx.Hash(), txIndex)
 
 		var (
@@ -237,6 +243,9 @@ func (pre *Prestate) Apply(vmConfig vm.Config, chainConfig *params.ChainConfig,
 		)
 		evm := vm.NewEVM(vmContext, txContext, statedb, chainConfig, vmConfig, firehose.NoOpContext)
 
+		if tracer != nil && tracer.OnTxStart != nil {
+			tracer.OnTxStart(evm.GetVMContext(), tx, msg.From)
+		}
 		// (ret []byte, usedGas uint64, failed bool, err error)
 		msgResult, err := core.ApplyMessage(evm, msg, gaspool)
 		if err != nil {
@@ -244,6 +253,14 @@ func (pre *Prestate) Apply(vmConfig vm.Config, chainConfig *params.ChainConfig,
 			log.Info("rejected tx", "index", i, "hash", tx.Hash(), "from", msg.From, "error", err)
 			rejectedTxs = append(rejectedTxs, &rejectedTx{i, err.Error()})
 			gaspool.SetGas(prevGas)
+			if tracer != nil {
+				if tracer.OnTxEnd != nil {
+					tracer.OnTxEnd(nil, err)
+				}
+				if err := writeTraceResult(tracer, traceOutput); err != nil {
+					log.Warn("Error writing tracer output", "err", err)
+				}
+			}
 			continue
 		}
 		includedTxs = append(includedTxs, tx)
@@ -286,6 +303,12 @@ func (pre *Prestate) Apply(vmConfig vm.Config, chainConfig *params.ChainConfig,
 			//receipt.BlockNumber
 			receipt.TransactionIndex = uint(txIndex)
 			receipts = append(receipts, receipt)
+			if tracer != nil {
+				if tracer.Hooks.OnTxEnd != nil {
+					tracer.Hooks.OnTxEnd(receipt, nil)
+				}
+				writeTraceResult(tracer, traceOutput)
+			}
 		}
 
 		txIndex++
@@ -311,15 +334,15 @@ func (pre *Prestate) Apply(vmConfig vm.Config, chainConfig *params.ChainConfig,
 			reward.Sub(reward, new(big.Int).SetUint64(ommer.Delta))
 			reward.Mul(reward, blockReward)
 			reward.Div(reward, big.NewInt(8))
-			statedb.AddBalance(ommer.Address, uint256.MustFromBig(reward), false, firehose.NoOpContext, "test")
+			statedb.AddBalance(ommer.Address, uint256.MustFromBig(reward), tracing.BalanceIncreaseRewardMineUncle, false, firehose.NoOpContext, "test")
 		}
-		statedb.AddBalance(pre.Env.Coinbase, uint256.MustFromBig(minerReward), false, firehose.NoOpContext, "test")
+		statedb.AddBalance(pre.Env.Coinbase, uint256.MustFromBig(minerReward), tracing.BalanceIncreaseRewardMineBlock, false, firehose.NoOpContext, "test")
 	}
 	// Apply withdrawals
 	for _, w := range pre.Env.Withdrawals {
 		// Amount is in gwei, turn into wei
 		amount := new(big.Int).Mul(new(big.Int).SetUint64(w.Amount), big.NewInt(params.GWei))
-		statedb.AddBalance(w.Address, uint256.MustFromBig(amount), false, firehose.NoOpContext, "test")
+		statedb.AddBalance(w.Address, uint256.MustFromBig(amount), tracing.BalanceIncreaseWithdrawal, false, firehose.NoOpContext, "test")
 	}
 	// Commit block
 	root, err := statedb.Commit(vmContext.BlockNumber.Uint64(), chainConfig.IsEIP158(vmContext.BlockNumber))
@@ -362,7 +385,7 @@ func MakePreState(db ethdb.Database, accounts types.GenesisAlloc) *state.StateDB
 	for addr, a := range accounts {
 		statedb.SetCode(addr, a.Code, firehose.NoOpContext)
 		statedb.SetNonce(addr, a.Nonce, firehose.NoOpContext)
-		statedb.SetBalance(addr, uint256.MustFromBig(a.Balance), firehose.NoOpContext, "test")
+		statedb.SetBalance(addr, uint256.MustFromBig(a.Balance), tracing.BalanceIncreaseGenesisBalance, firehose.NoOpContext, "test")
 		for k, v := range a.Storage {
 			statedb.SetState(addr, k, v, firehose.NoOpContext)
 		}
@@ -398,4 +421,17 @@ func calcDifficulty(config *params.ChainConfig, number, currentTime, parentTime 
 		Time:       parentTime,
 	}
 	return ethash.CalcDifficulty(config, currentTime, parent)
+}
+
+func writeTraceResult(tracer *tracers.Tracer, f io.WriteCloser) error {
+	defer f.Close()
+	result, err := tracer.GetResult()
+	if err != nil || result == nil {
+		return err
+	}
+	err = json.NewEncoder(f).Encode(result)
+	if err != nil {
+		return err
+	}
+	return nil
 }

@@ -20,6 +20,7 @@ import (
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/tracing"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/firehose"
 	"github.com/ethereum/go-ethereum/params"
@@ -30,8 +31,8 @@ import (
 type StateDB interface {
 	CreateAccount(common.Address, *firehose.Context)
 
-	SubBalance(common.Address, *uint256.Int, *firehose.Context, firehose.BalanceChangeReason)
-	AddBalance(common.Address, *uint256.Int, bool, *firehose.Context, firehose.BalanceChangeReason)
+	SubBalance(common.Address, *uint256.Int, tracing.BalanceChangeReason, *firehose.Context, firehose.BalanceChangeReason)
+	AddBalance(common.Address, *uint256.Int, tracing.BalanceChangeReason, bool, *firehose.Context, firehose.BalanceChangeReason)
 	GetBalance(common.Address) *uint256.Int
 
 	GetNonce(common.Address) uint64
@@ -49,6 +50,7 @@ type StateDB interface {
 	GetCommittedState(common.Address, common.Hash) common.Hash
 	GetState(common.Address, common.Hash) common.Hash
 	SetState(common.Address, common.Hash, common.Hash, *firehose.Context)
+	GetStorageRoot(addr common.Address) common.Hash
 
 	GetTransientState(addr common.Address, key common.Hash) common.Hash
 	SetTransientState(addr common.Address, key, value common.Hash)

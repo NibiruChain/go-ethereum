@@ -337,7 +337,7 @@ func benchmarkNonModifyingCode(gas uint64, code []byte, name string, tracerCode 
 			b.Fatal(err)
 		}
 		cfg.EVMConfig = vm.Config{
-			Tracer: tracer,
+			Tracer: tracer.Hooks,
 		}
 	}
 	var (
@@ -512,7 +512,7 @@ func TestEip2929Cases(t *testing.T) {
 			code, ops)
 		Execute(code, nil, &Config{
 			EVMConfig: vm.Config{
-				Tracer:    logger.NewMarkdownLogger(nil, os.Stdout),
+				Tracer:    logger.NewMarkdownLogger(nil, os.Stdout).Hooks(),
 				ExtraEips: []int{2929},
 			},
 		})
@@ -665,7 +665,7 @@ func TestColdAccountAccessCost(t *testing.T) {
 		tracer := logger.NewStructLogger(nil)
 		Execute(tc.code, nil, &Config{
 			EVMConfig: vm.Config{
-				Tracer: tracer,
+				Tracer: tracer.Hooks(),
 			},
 		})
 		have := tracer.StructLogs()[tc.step].GasCost
@@ -813,7 +813,7 @@ func TestRuntimeJSTracer(t *testing.T) {
 		byte(vm.PUSH1), 0,
 		byte(vm.RETURN),
 	}
-	depressedCode := []byte{
+	suicideCode := []byte{
 		byte(vm.PUSH1), 0xaa,
 		byte(vm.SELFDESTRUCT),
 	}
@@ -826,7 +826,7 @@ func TestRuntimeJSTracer(t *testing.T) {
 			statedb.SetCode(common.HexToAddress("0xcc"), calleeCode, firehose.NoOpContext)
 			statedb.SetCode(common.HexToAddress("0xdd"), calleeCode, firehose.NoOpContext)
 			statedb.SetCode(common.HexToAddress("0xee"), calleeCode, firehose.NoOpContext)
-			statedb.SetCode(common.HexToAddress("0xff"), depressedCode, firehose.NoOpContext)
+			statedb.SetCode(common.HexToAddress("0xff"), suicideCode, firehose.NoOpContext)
 
 			tracer, err := tracers.DefaultDirectory.New(jsTracer, new(tracers.Context), nil)
 			if err != nil {
@@ -836,7 +836,7 @@ func TestRuntimeJSTracer(t *testing.T) {
 				GasLimit: 1000000,
 				State:    statedb,
 				EVMConfig: vm.Config{
-					Tracer: tracer,
+					Tracer: tracer.Hooks,
 				}})
 			if err != nil {
 				t.Fatal("didn't expect error", err)
@@ -870,7 +870,7 @@ func TestJSTracerCreateTx(t *testing.T) {
 	_, _, _, err = Create(code, &Config{
 		State: statedb,
 		EVMConfig: vm.Config{
-			Tracer: tracer,
+			Tracer: tracer.Hooks,
 		}})
 	if err != nil {
 		t.Fatal(err)

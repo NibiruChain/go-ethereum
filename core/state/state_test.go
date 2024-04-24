@@ -23,6 +23,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/rawdb"
+	"github.com/ethereum/go-ethereum/core/tracing"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethdb"
@@ -50,11 +51,11 @@ func TestDump(t *testing.T) {
 
 	// generate a few entries
 	obj1 := s.state.getOrNewStateObject(common.BytesToAddress([]byte{0x01}), false, firehose.NoOpContext)
-	obj1.AddBalance(uint256.NewInt(22), firehose.NoOpContext, "test")
+	obj1.AddBalance(uint256.NewInt(22), tracing.BalanceChangeUnspecified, firehose.NoOpContext, "test")
 	obj2 := s.state.getOrNewStateObject(common.BytesToAddress([]byte{0x01, 0x02}), false, firehose.NoOpContext)
 	obj2.SetCode(crypto.Keccak256Hash([]byte{3, 3, 3, 3, 3, 3, 3}), []byte{3, 3, 3, 3, 3, 3, 3}, firehose.NoOpContext)
 	obj3 := s.state.getOrNewStateObject(common.BytesToAddress([]byte{0x02}), false, firehose.NoOpContext)
-	obj3.SetBalance(uint256.NewInt(44), firehose.NoOpContext, "test")
+	obj3.SetBalance(uint256.NewInt(44), tracing.BalanceChangeUnspecified, firehose.NoOpContext, "test")
 
 	// write some of them to the trie
 	s.state.updateStateObject(obj1)
@@ -107,13 +108,13 @@ func TestIterativeDump(t *testing.T) {
 
 	// generate a few entries
 	obj1 := s.state.getOrNewStateObject(common.BytesToAddress([]byte{0x01}), false, firehose.NoOpContext)
-	obj1.AddBalance(uint256.NewInt(22), firehose.NoOpContext, "test")
+	obj1.AddBalance(uint256.NewInt(22), tracing.BalanceChangeUnspecified, firehose.NoOpContext, "test")
 	obj2 := s.state.getOrNewStateObject(common.BytesToAddress([]byte{0x01, 0x02}), false, firehose.NoOpContext)
 	obj2.SetCode(crypto.Keccak256Hash([]byte{3, 3, 3, 3, 3, 3, 3}), []byte{3, 3, 3, 3, 3, 3, 3}, firehose.NoOpContext)
 	obj3 := s.state.getOrNewStateObject(common.BytesToAddress([]byte{0x02}), false, firehose.NoOpContext)
-	obj3.SetBalance(uint256.NewInt(44), firehose.NoOpContext, "test")
+	obj3.SetBalance(uint256.NewInt(44), tracing.BalanceChangeUnspecified, firehose.NoOpContext, "test")
 	obj4 := s.state.getOrNewStateObject(common.BytesToAddress([]byte{0x00}), false, firehose.NoOpContext)
-	obj4.AddBalance(uint256.NewInt(1337), firehose.NoOpContext, "test")
+	obj4.AddBalance(uint256.NewInt(1337), tracing.BalanceChangeUnspecified, firehose.NoOpContext, "test")
 
 	// write some of them to the trie
 	s.state.updateStateObject(obj1)
@@ -209,7 +210,7 @@ func TestSnapshot2(t *testing.T) {
 
 	// db, trie are already non-empty values
 	so0 := state.getStateObject(stateobjaddr0)
-	so0.SetBalance(uint256.NewInt(42), firehose.NoOpContext, "test")
+	so0.SetBalance(uint256.NewInt(42), tracing.BalanceChangeUnspecified, firehose.NoOpContext, "test")
 	so0.SetNonce(43, firehose.NoOpContext)
 	so0.SetCode(crypto.Keccak256Hash([]byte{'c', 'a', 'f', 'e'}), []byte{'c', 'a', 'f', 'e'}, firehose.NoOpContext)
 	so0.selfDestructed = false
@@ -221,7 +222,7 @@ func TestSnapshot2(t *testing.T) {
 
 	// and one with deleted == true
 	so1 := state.getStateObject(stateobjaddr1)
-	so1.SetBalance(uint256.NewInt(52), firehose.NoOpContext, "test")
+	so1.SetBalance(uint256.NewInt(52), tracing.BalanceChangeUnspecified, firehose.NoOpContext, "test")
 	so1.SetNonce(53, firehose.NoOpContext)
 	so1.SetCode(crypto.Keccak256Hash([]byte{'c', 'a', 'f', 'e', '2'}), []byte{'c', 'a', 'f', 'e', '2'}, firehose.NoOpContext)
 	so1.selfDestructed = true
