@@ -146,7 +146,7 @@ func (t *flatCallTracer) CaptureStart(env *vm.EVM, from common.Address, to commo
 	t.tracer.CaptureStart(env, from, to, create, input, gas, value)
 	// Update list of precompiles based on current block
 	rules := env.ChainConfig().Rules(env.Context.BlockNumber, env.Context.Random != nil, env.Context.Time)
-	t.activePrecompiles = vm.ActivePrecompiles(rules)
+	t.activePrecompiles = env.ActivePrecompiles(rules)
 }
 
 // CaptureEnd is called after the call finishes to finalize the tracing.
