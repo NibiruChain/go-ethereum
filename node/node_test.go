@@ -34,9 +34,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var (
-	testNodeKey, _ = crypto.GenerateKey()
-)
+var testNodeKey, _ = crypto.GenerateKey()
 
 func testNodeConfig() *Config {
 	return &Config{

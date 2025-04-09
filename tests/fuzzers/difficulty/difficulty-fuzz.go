@@ -62,14 +62,17 @@ func (f *fuzzer) readUint64(min, max uint64) uint64 {
 	a = min + a%(max-min)
 	return a
 }
+
 func (f *fuzzer) readBool() bool {
 	return f.read(1)[0]&0x1 == 0
 }
 
 // The function must return
 // 1 if the fuzzer should increase priority of the
-//    given input during subsequent fuzzing (for example, the input is lexically
-//    correct and was parsed successfully);
+//
+//	given input during subsequent fuzzing (for example, the input is lexically
+//	correct and was parsed successfully);
+//
 // -1 if the input must not be added to corpus even if gives new coverage; and
 // 0  otherwise
 // other values are reserved for future use.
@@ -111,9 +114,9 @@ func (f *fuzzer) fuzz() int {
 	var time uint64
 	{
 		childTime := f.readUint64(1, 0xFFFFFFFFFFFFFFFF)
-		//fmt.Printf("childTime: %x\n",childTime)
+		// fmt.Printf("childTime: %x\n",childTime)
 		delta := f.readUint64(1, childTime)
-		//fmt.Printf("delta: %v\n", delta)
+		// fmt.Printf("delta: %v\n", delta)
 		pTime := childTime - delta
 		header.Time = pTime
 		time = childTime

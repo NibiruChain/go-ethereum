@@ -368,7 +368,7 @@ func TestHandshakeForwardCompatibility(t *testing.T) {
 }
 
 func BenchmarkHandshakeRead(b *testing.B) {
-	var input = unhex(eip8HandshakeAuthTests[0].input)
+	input := unhex(eip8HandshakeAuthTests[0].input)
 
 	for i := 0; i < b.N; i++ {
 		var (

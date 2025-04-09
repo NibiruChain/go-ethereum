@@ -63,7 +63,7 @@ func init() {
 
 	testChainBase = newTestChain(blockCacheMaxItems+200, testGenesis)
 
-	var forkLen = int(fullMaxForkAncestry + 50)
+	forkLen := int(fullMaxForkAncestry + 50)
 	var wg sync.WaitGroup
 
 	// Generate the test chains to seed the peers with

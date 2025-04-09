@@ -61,7 +61,7 @@ func (p *pruner) loop() {
 	defer p.wg.Done()
 
 	// cleanTicker is the ticker used to trigger a history clean 2 times a day.
-	var cleanTicker = time.NewTicker(12 * time.Hour)
+	cleanTicker := time.NewTicker(12 * time.Hour)
 	defer cleanTicker.Stop()
 
 	// pruning finds the sections that have been processed by all indexers

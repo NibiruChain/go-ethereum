@@ -62,11 +62,9 @@ const (
 	txGatherSlack = 100 * time.Millisecond
 )
 
-var (
-	// txFetchTimeout is the maximum allotted time to return an explicitly
-	// requested transaction.
-	txFetchTimeout = 5 * time.Second
-)
+// txFetchTimeout is the maximum allotted time to return an explicitly
+// requested transaction.
+var txFetchTimeout = 5 * time.Second
 
 var (
 	txAnnounceInMeter          = metrics.NewRegisteredMeter("eth/fetcher/transaction/announces/in", nil)

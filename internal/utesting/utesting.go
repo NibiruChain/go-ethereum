@@ -79,7 +79,7 @@ func RunTAP(tests []Test, report io.Writer) []Result {
 }
 
 func run(tests []Test, output testOutput) []Result {
-	var results = make([]Result, len(tests))
+	results := make([]Result, len(tests))
 	for i, test := range tests {
 		buffer := new(bytes.Buffer)
 		logOutput := io.MultiWriter(buffer, output)

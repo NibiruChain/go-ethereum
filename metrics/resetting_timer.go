@@ -51,8 +51,7 @@ func NewResettingTimer() ResettingTimer {
 }
 
 // NilResettingTimer is a no-op ResettingTimer.
-type NilResettingTimer struct {
-}
+type NilResettingTimer struct{}
 
 // Values is a no-op.
 func (NilResettingTimer) Values() []int64 { return nil }

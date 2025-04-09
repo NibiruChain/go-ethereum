@@ -714,7 +714,8 @@ func showMetaData(ctx *cli.Context) error {
 		{"databaseVersion", pp(rawdb.ReadDatabaseVersion(db))},
 		{"headBlockHash", fmt.Sprintf("%v", rawdb.ReadHeadBlockHash(db))},
 		{"headFastBlockHash", fmt.Sprintf("%v", rawdb.ReadHeadFastBlockHash(db))},
-		{"headHeaderHash", fmt.Sprintf("%v", rawdb.ReadHeadHeaderHash(db))}}
+		{"headHeaderHash", fmt.Sprintf("%v", rawdb.ReadHeadHeaderHash(db))},
+	}
 	if b := rawdb.ReadHeadBlock(db); b != nil {
 		data = append(data, []string{"headBlock.Hash", fmt.Sprintf("%v", b.Hash())})
 		data = append(data, []string{"headBlock.Root", fmt.Sprintf("%v", b.Root())})
@@ -728,7 +729,8 @@ func showMetaData(ctx *cli.Context) error {
 		data = append(data, []string{"headHeader.Root", fmt.Sprintf("%v", h.Root)})
 		data = append(data, []string{"headHeader.Number", fmt.Sprintf("%d (%#x)", h.Number, h.Number)})
 	}
-	data = append(data, [][]string{{"frozen", fmt.Sprintf("%d items", ancients)},
+	data = append(data, [][]string{
+		{"frozen", fmt.Sprintf("%d items", ancients)},
 		{"lastPivotNumber", pp(rawdb.ReadLastPivotNumber(db))},
 		{"len(snapshotSyncStatus)", fmt.Sprintf("%d bytes", len(rawdb.ReadSnapshotSyncStatus(db)))},
 		{"snapshotGenerator", snapshot.ParseGeneratorStatus(rawdb.ReadSnapshotGenerator(db))},

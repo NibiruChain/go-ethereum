@@ -205,9 +205,9 @@ func testCallTracer(tracerName string, dirPath string, t *testing.T) {
 
 			if !jsonEqual(ret, test.Result) {
 				// uncomment this for easier debugging
-				//have, _ := json.MarshalIndent(ret, "", " ")
-				//want, _ := json.MarshalIndent(test.Result, "", " ")
-				//t.Fatalf("trace mismatch: \nhave %+v\nwant %+v", string(have), string(want))
+				// have, _ := json.MarshalIndent(ret, "", " ")
+				// want, _ := json.MarshalIndent(test.Result, "", " ")
+				// t.Fatalf("trace mismatch: \nhave %+v\nwant %+v", string(have), string(want))
 				t.Fatalf("trace mismatch: \nhave %+v\nwant %+v", ret, test.Result)
 			}
 		})
@@ -240,6 +240,7 @@ func camel(str string) string {
 	}
 	return strings.Join(pieces, "")
 }
+
 func BenchmarkTracers(b *testing.B) {
 	files, err := os.ReadDir(filepath.Join("testdata", "call_tracer"))
 	if err != nil {
@@ -315,7 +316,7 @@ func benchTracer(tracerName string, test *callTracerTest, b *testing.B) {
 // Tx to A, A calls B with zero value. B does not already exist.
 // Expected: that enter/exit is invoked and the inner call is shown in the result
 func TestZeroValueToNotExitCall(t *testing.T) {
-	var to = common.HexToAddress("0x00000000000000000000000000000000deadbeef")
+	to := common.HexToAddress("0x00000000000000000000000000000000deadbeef")
 	privkey, err := crypto.HexToECDSA("0000000000000000deadbeef00000000000000000000000000000000deadbeef")
 	if err != nil {
 		t.Fatalf("err %v", err)
@@ -343,12 +344,12 @@ func TestZeroValueToNotExitCall(t *testing.T) {
 		Difficulty:  big.NewInt(0x30000),
 		GasLimit:    uint64(6000000),
 	}
-	var code = []byte{
+	code := []byte{
 		byte(vm.PUSH1), 0x0, byte(vm.DUP1), byte(vm.DUP1), byte(vm.DUP1), // in and outs zero
 		byte(vm.DUP1), byte(vm.PUSH1), 0xff, byte(vm.GAS), // value=0,address=0xff, gas=GAS
 		byte(vm.CALL),
 	}
-	var alloc = core.GenesisAlloc{
+	alloc := core.GenesisAlloc{
 		to: core.GenesisAccount{
 			Nonce: 1,
 			Code:  code,

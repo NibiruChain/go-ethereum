@@ -76,10 +76,13 @@ type TxPool struct {
 //
 // Send instructs backend to forward new transactions
 // NewHead notifies backend about a new head after processed by the tx pool,
-//  including  mined and rolled back transactions since the last event
+//
+//	including  mined and rolled back transactions since the last event
+//
 // Discard notifies backend about transactions that should be discarded either
-//  because they have been replaced by a re-send or because they have been mined
-//  long ago and no rollback is expected
+//
+//	because they have been replaced by a re-send or because they have been mined
+//	long ago and no rollback is expected
 type TxRelayBackend interface {
 	Send(txs types.Transactions)
 	NewHead(head common.Hash, mined []common.Hash, rollback []common.Hash)
@@ -439,7 +442,7 @@ func (pool *TxPool) Add(ctx context.Context, tx *types.Transaction) error {
 	if err := pool.add(ctx, tx); err != nil {
 		return err
 	}
-	//fmt.Println("Send", tx.Hash())
+	// fmt.Println("Send", tx.Hash())
 	pool.relay.Send(types.Transactions{tx})
 
 	pool.chainDb.Put(tx.Hash().Bytes(), data)

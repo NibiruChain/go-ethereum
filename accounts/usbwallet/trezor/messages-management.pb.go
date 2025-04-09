@@ -11,9 +11,11 @@ import (
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
-var _ = proto.Marshal
-var _ = fmt.Errorf
-var _ = math.Inf
+var (
+	_ = proto.Marshal
+	_ = fmt.Errorf
+	_ = math.Inf
+)
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the proto package it is being compiled against.
@@ -181,15 +183,19 @@ func (*Initialize) Descriptor() ([]byte, []int) {
 func (m *Initialize) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Initialize.Unmarshal(m, b)
 }
+
 func (m *Initialize) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Initialize.Marshal(b, m, deterministic)
 }
+
 func (m *Initialize) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_Initialize.Merge(m, src)
 }
+
 func (m *Initialize) XXX_Size() int {
 	return xxx_messageInfo_Initialize.Size(m)
 }
+
 func (m *Initialize) XXX_DiscardUnknown() {
 	xxx_messageInfo_Initialize.DiscardUnknown(m)
 }
@@ -230,15 +236,19 @@ func (*GetFeatures) Descriptor() ([]byte, []int) {
 func (m *GetFeatures) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetFeatures.Unmarshal(m, b)
 }
+
 func (m *GetFeatures) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_GetFeatures.Marshal(b, m, deterministic)
 }
+
 func (m *GetFeatures) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_GetFeatures.Merge(m, src)
 }
+
 func (m *GetFeatures) XXX_Size() int {
 	return xxx_messageInfo_GetFeatures.Size(m)
 }
+
 func (m *GetFeatures) XXX_DiscardUnknown() {
 	xxx_messageInfo_GetFeatures.DiscardUnknown(m)
 }
@@ -291,15 +301,19 @@ func (*Features) Descriptor() ([]byte, []int) {
 func (m *Features) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Features.Unmarshal(m, b)
 }
+
 func (m *Features) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Features.Marshal(b, m, deterministic)
 }
+
 func (m *Features) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_Features.Merge(m, src)
 }
+
 func (m *Features) XXX_Size() int {
 	return xxx_messageInfo_Features.Size(m)
 }
+
 func (m *Features) XXX_DiscardUnknown() {
 	xxx_messageInfo_Features.DiscardUnknown(m)
 }
@@ -515,15 +529,19 @@ func (*ClearSession) Descriptor() ([]byte, []int) {
 func (m *ClearSession) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ClearSession.Unmarshal(m, b)
 }
+
 func (m *ClearSession) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ClearSession.Marshal(b, m, deterministic)
 }
+
 func (m *ClearSession) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_ClearSession.Merge(m, src)
 }
+
 func (m *ClearSession) XXX_Size() int {
 	return xxx_messageInfo_ClearSession.Size(m)
 }
+
 func (m *ClearSession) XXX_DiscardUnknown() {
 	xxx_messageInfo_ClearSession.DiscardUnknown(m)
 }
@@ -558,15 +576,19 @@ func (*ApplySettings) Descriptor() ([]byte, []int) {
 func (m *ApplySettings) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ApplySettings.Unmarshal(m, b)
 }
+
 func (m *ApplySettings) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ApplySettings.Marshal(b, m, deterministic)
 }
+
 func (m *ApplySettings) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_ApplySettings.Merge(m, src)
 }
+
 func (m *ApplySettings) XXX_Size() int {
 	return xxx_messageInfo_ApplySettings.Size(m)
 }
+
 func (m *ApplySettings) XXX_DiscardUnknown() {
 	xxx_messageInfo_ApplySettings.DiscardUnknown(m)
 }
@@ -644,15 +666,19 @@ func (*ApplyFlags) Descriptor() ([]byte, []int) {
 func (m *ApplyFlags) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ApplyFlags.Unmarshal(m, b)
 }
+
 func (m *ApplyFlags) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ApplyFlags.Marshal(b, m, deterministic)
 }
+
 func (m *ApplyFlags) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_ApplyFlags.Merge(m, src)
 }
+
 func (m *ApplyFlags) XXX_Size() int {
 	return xxx_messageInfo_ApplyFlags.Size(m)
 }
+
 func (m *ApplyFlags) XXX_DiscardUnknown() {
 	xxx_messageInfo_ApplyFlags.DiscardUnknown(m)
 }
@@ -688,15 +714,19 @@ func (*ChangePin) Descriptor() ([]byte, []int) {
 func (m *ChangePin) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ChangePin.Unmarshal(m, b)
 }
+
 func (m *ChangePin) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ChangePin.Marshal(b, m, deterministic)
 }
+
 func (m *ChangePin) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_ChangePin.Merge(m, src)
 }
+
 func (m *ChangePin) XXX_Size() int {
 	return xxx_messageInfo_ChangePin.Size(m)
 }
+
 func (m *ChangePin) XXX_DiscardUnknown() {
 	xxx_messageInfo_ChangePin.DiscardUnknown(m)
 }
@@ -734,15 +764,19 @@ func (*Ping) Descriptor() ([]byte, []int) {
 func (m *Ping) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Ping.Unmarshal(m, b)
 }
+
 func (m *Ping) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Ping.Marshal(b, m, deterministic)
 }
+
 func (m *Ping) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_Ping.Merge(m, src)
 }
+
 func (m *Ping) XXX_Size() int {
 	return xxx_messageInfo_Ping.Size(m)
 }
+
 func (m *Ping) XXX_DiscardUnknown() {
 	xxx_messageInfo_Ping.DiscardUnknown(m)
 }
@@ -797,15 +831,19 @@ func (*Cancel) Descriptor() ([]byte, []int) {
 func (m *Cancel) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Cancel.Unmarshal(m, b)
 }
+
 func (m *Cancel) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Cancel.Marshal(b, m, deterministic)
 }
+
 func (m *Cancel) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_Cancel.Merge(m, src)
 }
+
 func (m *Cancel) XXX_Size() int {
 	return xxx_messageInfo_Cancel.Size(m)
 }
+
 func (m *Cancel) XXX_DiscardUnknown() {
 	xxx_messageInfo_Cancel.DiscardUnknown(m)
 }
@@ -834,15 +872,19 @@ func (*GetEntropy) Descriptor() ([]byte, []int) {
 func (m *GetEntropy) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetEntropy.Unmarshal(m, b)
 }
+
 func (m *GetEntropy) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_GetEntropy.Marshal(b, m, deterministic)
 }
+
 func (m *GetEntropy) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_GetEntropy.Merge(m, src)
 }
+
 func (m *GetEntropy) XXX_Size() int {
 	return xxx_messageInfo_GetEntropy.Size(m)
 }
+
 func (m *GetEntropy) XXX_DiscardUnknown() {
 	xxx_messageInfo_GetEntropy.DiscardUnknown(m)
 }
@@ -876,15 +918,19 @@ func (*Entropy) Descriptor() ([]byte, []int) {
 func (m *Entropy) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Entropy.Unmarshal(m, b)
 }
+
 func (m *Entropy) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Entropy.Marshal(b, m, deterministic)
 }
+
 func (m *Entropy) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_Entropy.Merge(m, src)
 }
+
 func (m *Entropy) XXX_Size() int {
 	return xxx_messageInfo_Entropy.Size(m)
 }
+
 func (m *Entropy) XXX_DiscardUnknown() {
 	xxx_messageInfo_Entropy.DiscardUnknown(m)
 }
@@ -919,15 +965,19 @@ func (*WipeDevice) Descriptor() ([]byte, []int) {
 func (m *WipeDevice) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_WipeDevice.Unmarshal(m, b)
 }
+
 func (m *WipeDevice) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_WipeDevice.Marshal(b, m, deterministic)
 }
+
 func (m *WipeDevice) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_WipeDevice.Merge(m, src)
 }
+
 func (m *WipeDevice) XXX_Size() int {
 	return xxx_messageInfo_WipeDevice.Size(m)
 }
+
 func (m *WipeDevice) XXX_DiscardUnknown() {
 	xxx_messageInfo_WipeDevice.DiscardUnknown(m)
 }
@@ -963,15 +1013,19 @@ func (*LoadDevice) Descriptor() ([]byte, []int) {
 func (m *LoadDevice) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_LoadDevice.Unmarshal(m, b)
 }
+
 func (m *LoadDevice) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_LoadDevice.Marshal(b, m, deterministic)
 }
+
 func (m *LoadDevice) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_LoadDevice.Merge(m, src)
 }
+
 func (m *LoadDevice) XXX_Size() int {
 	return xxx_messageInfo_LoadDevice.Size(m)
 }
+
 func (m *LoadDevice) XXX_DiscardUnknown() {
 	xxx_messageInfo_LoadDevice.DiscardUnknown(m)
 }
@@ -1066,23 +1120,29 @@ func (*ResetDevice) Descriptor() ([]byte, []int) {
 func (m *ResetDevice) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ResetDevice.Unmarshal(m, b)
 }
+
 func (m *ResetDevice) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ResetDevice.Marshal(b, m, deterministic)
 }
+
 func (m *ResetDevice) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_ResetDevice.Merge(m, src)
 }
+
 func (m *ResetDevice) XXX_Size() int {
 	return xxx_messageInfo_ResetDevice.Size(m)
 }
+
 func (m *ResetDevice) XXX_DiscardUnknown() {
 	xxx_messageInfo_ResetDevice.DiscardUnknown(m)
 }
 
 var xxx_messageInfo_ResetDevice proto.InternalMessageInfo
 
-const Default_ResetDevice_Strength uint32 = 256
-const Default_ResetDevice_Language string = "english"
+const (
+	Default_ResetDevice_Strength uint32 = 256
+	Default_ResetDevice_Language string = "english"
+)
 
 func (m *ResetDevice) GetDisplayRandom() bool {
 	if m != nil && m.DisplayRandom != nil {
@@ -1167,15 +1227,19 @@ func (*BackupDevice) Descriptor() ([]byte, []int) {
 func (m *BackupDevice) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_BackupDevice.Unmarshal(m, b)
 }
+
 func (m *BackupDevice) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_BackupDevice.Marshal(b, m, deterministic)
 }
+
 func (m *BackupDevice) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_BackupDevice.Merge(m, src)
 }
+
 func (m *BackupDevice) XXX_Size() int {
 	return xxx_messageInfo_BackupDevice.Size(m)
 }
+
 func (m *BackupDevice) XXX_DiscardUnknown() {
 	xxx_messageInfo_BackupDevice.DiscardUnknown(m)
 }
@@ -1201,15 +1265,19 @@ func (*EntropyRequest) Descriptor() ([]byte, []int) {
 func (m *EntropyRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_EntropyRequest.Unmarshal(m, b)
 }
+
 func (m *EntropyRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_EntropyRequest.Marshal(b, m, deterministic)
 }
+
 func (m *EntropyRequest) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_EntropyRequest.Merge(m, src)
 }
+
 func (m *EntropyRequest) XXX_Size() int {
 	return xxx_messageInfo_EntropyRequest.Size(m)
 }
+
 func (m *EntropyRequest) XXX_DiscardUnknown() {
 	xxx_messageInfo_EntropyRequest.DiscardUnknown(m)
 }
@@ -1236,15 +1304,19 @@ func (*EntropyAck) Descriptor() ([]byte, []int) {
 func (m *EntropyAck) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_EntropyAck.Unmarshal(m, b)
 }
+
 func (m *EntropyAck) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_EntropyAck.Marshal(b, m, deterministic)
 }
+
 func (m *EntropyAck) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_EntropyAck.Merge(m, src)
 }
+
 func (m *EntropyAck) XXX_Size() int {
 	return xxx_messageInfo_EntropyAck.Size(m)
 }
+
 func (m *EntropyAck) XXX_DiscardUnknown() {
 	xxx_messageInfo_EntropyAck.DiscardUnknown(m)
 }
@@ -1289,15 +1361,19 @@ func (*RecoveryDevice) Descriptor() ([]byte, []int) {
 func (m *RecoveryDevice) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RecoveryDevice.Unmarshal(m, b)
 }
+
 func (m *RecoveryDevice) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_RecoveryDevice.Marshal(b, m, deterministic)
 }
+
 func (m *RecoveryDevice) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_RecoveryDevice.Merge(m, src)
 }
+
 func (m *RecoveryDevice) XXX_Size() int {
 	return xxx_messageInfo_RecoveryDevice.Size(m)
 }
+
 func (m *RecoveryDevice) XXX_DiscardUnknown() {
 	xxx_messageInfo_RecoveryDevice.DiscardUnknown(m)
 }
@@ -1390,15 +1466,19 @@ func (*WordRequest) Descriptor() ([]byte, []int) {
 func (m *WordRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_WordRequest.Unmarshal(m, b)
 }
+
 func (m *WordRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_WordRequest.Marshal(b, m, deterministic)
 }
+
 func (m *WordRequest) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_WordRequest.Merge(m, src)
 }
+
 func (m *WordRequest) XXX_Size() int {
 	return xxx_messageInfo_WordRequest.Size(m)
 }
+
 func (m *WordRequest) XXX_DiscardUnknown() {
 	xxx_messageInfo_WordRequest.DiscardUnknown(m)
 }
@@ -1434,15 +1514,19 @@ func (*WordAck) Descriptor() ([]byte, []int) {
 func (m *WordAck) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_WordAck.Unmarshal(m, b)
 }
+
 func (m *WordAck) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_WordAck.Marshal(b, m, deterministic)
 }
+
 func (m *WordAck) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_WordAck.Merge(m, src)
 }
+
 func (m *WordAck) XXX_Size() int {
 	return xxx_messageInfo_WordAck.Size(m)
 }
+
 func (m *WordAck) XXX_DiscardUnknown() {
 	xxx_messageInfo_WordAck.DiscardUnknown(m)
 }
@@ -1477,15 +1561,19 @@ func (*SetU2FCounter) Descriptor() ([]byte, []int) {
 func (m *SetU2FCounter) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_SetU2FCounter.Unmarshal(m, b)
 }
+
 func (m *SetU2FCounter) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_SetU2FCounter.Marshal(b, m, deterministic)
 }
+
 func (m *SetU2FCounter) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_SetU2FCounter.Merge(m, src)
 }
+
 func (m *SetU2FCounter) XXX_Size() int {
 	return xxx_messageInfo_SetU2FCounter.Size(m)
 }
+
 func (m *SetU2FCounter) XXX_DiscardUnknown() {
 	xxx_messageInfo_SetU2FCounter.DiscardUnknown(m)
 }

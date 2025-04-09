@@ -30,7 +30,7 @@ import (
 // TestEthProtocolNegotiation tests whether the test suite
 // can negotiate the highest eth protocol in a status message exchange
 func TestEthProtocolNegotiation(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		conn     *Conn
 		caps     []p2p.Cap
 		expected uint32
@@ -139,7 +139,7 @@ func TestChain_GetHeaders(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var tests = []struct {
+	tests := []struct {
 		req      GetBlockHeaders
 		expected []*types.Header
 	}{

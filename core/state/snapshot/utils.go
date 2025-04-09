@@ -117,7 +117,7 @@ func CheckJournalAccount(db ethdb.KeyValueStore, hash common.Hash) error {
 		}
 		it.Release()
 	}
-	var depth = 0
+	depth := 0
 
 	return iterateJournal(db, func(pRoot, root common.Hash, destructs map[common.Hash]struct{}, accounts map[common.Hash][]byte, storage map[common.Hash]map[common.Hash][]byte) error {
 		_, a := accounts[hash]

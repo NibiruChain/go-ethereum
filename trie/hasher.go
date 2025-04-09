@@ -97,7 +97,7 @@ func (h *hasher) hashShortNodeChildren(n *shortNode) (collapsed, cached *shortNo
 	collapsed, cached = n.copy(), n.copy()
 	// Previously, we did copy this one. We don't seem to need to actually
 	// do that, since we don't overwrite/reuse keys
-	//cached.Key = common.CopyBytes(n.Key)
+	// cached.Key = common.CopyBytes(n.Key)
 	collapsed.Key = hexToCompact(n.Key)
 	// Unless the child is a valuenode or hashnode, hash it
 	switch n.Val.(type) {
@@ -170,8 +170,8 @@ func (h *hasher) fullnodeToHash(n *fullNode, force bool) node {
 //
 // All node encoding must be done like this:
 //
-//     node.encode(h.encbuf)
-//     enc := h.encodedBytes()
+//	node.encode(h.encbuf)
+//	enc := h.encodedBytes()
 //
 // This convention exists because node.encode can only be inlined/escape-analyzed when
 // called on a concrete receiver type.

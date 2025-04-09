@@ -56,7 +56,7 @@ func (tx *GnosisSafeTx) ToTypedData() apitypes.TypedData {
 	if tx.Data != nil {
 		data = *tx.Data
 	}
-	var domainType = []apitypes.Type{{Name: "verifyingContract", Type: "address"}}
+	domainType := []apitypes.Type{{Name: "verifyingContract", Type: "address"}}
 	if tx.ChainId != nil {
 		domainType = append([]apitypes.Type{{Name: "chainId", Type: "uint256"}}, domainType[0])
 	}

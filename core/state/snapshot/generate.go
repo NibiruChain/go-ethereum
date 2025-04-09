@@ -293,7 +293,8 @@ func (dl *diskLayer) proveRange(ctx *generatorContext, owner common.Hash, root c
 			diskMore: diskMore,
 			trieMore: cont,
 			proofErr: err,
-			tr:       tr},
+			tr:       tr,
+		},
 		nil
 }
 
@@ -538,7 +539,7 @@ func generateStorages(ctx *generatorContext, dl *diskLayer, account common.Hash,
 		return nil
 	}
 	// Loop for re-generating the missing storage slots.
-	var origin = common.CopyBytes(storeMarker)
+	origin := common.CopyBytes(storeMarker)
 	for {
 		exhausted, last, err := dl.generateRange(ctx, account, storageRoot, append(rawdb.SnapshotStoragePrefix, account.Bytes()...), snapStorage, origin, storageCheckRange, onStorage, nil)
 		if err != nil {
@@ -634,7 +635,7 @@ func generateAccounts(ctx *generatorContext, dl *diskLayer, accMarker []byte) er
 	}
 	// Always reset the initial account range as 1 whenever recover from the
 	// interruption. TODO(rjl493456442) can we remove it?
-	var accountRange = accountCheckRange
+	accountRange := accountCheckRange
 	if len(accMarker) > 0 {
 		accountRange = 1
 	}

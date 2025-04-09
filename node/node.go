@@ -320,7 +320,7 @@ func (n *Node) openDataDir() error {
 	}
 
 	instdir := filepath.Join(n.config.DataDir, n.config.name())
-	if err := os.MkdirAll(instdir, 0700); err != nil {
+	if err := os.MkdirAll(instdir, 0o700); err != nil {
 		return err
 	}
 	// Lock the instance directory to prevent concurrent use by another instance as well as
@@ -370,7 +370,7 @@ func (n *Node) obtainJWTSecret(cliParam string) ([]byte, error) {
 		log.Info("Generated ephemeral JWT secret", "secret", hexutil.Encode(jwtSecret))
 		return jwtSecret, nil
 	}
-	if err := os.WriteFile(fileName, []byte(hexutil.Encode(jwtSecret)), 0600); err != nil {
+	if err := os.WriteFile(fileName, []byte(hexutil.Encode(jwtSecret)), 0o600); err != nil {
 		return nil, err
 	}
 	log.Info("Generated JWT secret", "path", fileName)

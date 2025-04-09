@@ -111,7 +111,7 @@ func New(config Config) (*Console, error) {
 		signalReceived:     make(chan struct{}, 1),
 		stopped:            make(chan struct{}),
 	}
-	if err := os.MkdirAll(config.DataDir, 0700); err != nil {
+	if err := os.MkdirAll(config.DataDir, 0o700); err != nil {
 		return nil, err
 	}
 	if err := console.init(config.Preload); err != nil {
@@ -553,8 +553,8 @@ func (c *Console) Stop(graceful bool) error {
 }
 
 func (c *Console) writeHistory() error {
-	if err := os.WriteFile(c.histPath, []byte(strings.Join(c.history, "\n")), 0600); err != nil {
+	if err := os.WriteFile(c.histPath, []byte(strings.Join(c.history, "\n")), 0o600); err != nil {
 		return err
 	}
-	return os.Chmod(c.histPath, 0600) // Force 0600, even if it was different previously
+	return os.Chmod(c.histPath, 0o600) // Force 0600, even if it was different previously
 }

@@ -61,9 +61,7 @@ const (
 	dbVersion        = 9
 )
 
-var (
-	errInvalidIP = errors.New("invalid IP")
-)
+var errInvalidIP = errors.New("invalid IP")
 
 var zeroIP = make(net.IP, 16)
 

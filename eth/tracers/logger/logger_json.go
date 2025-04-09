@@ -71,7 +71,7 @@ func (l *JSONLogger) CaptureState(pc uint64, op vm.OpCode, gas, cost uint64, sco
 		log.Memory = memory.Data()
 	}
 	if !l.cfg.DisableStack {
-		log.Stack = stack.Data()
+		log.Stack = stack.Data
 	}
 	if l.cfg.EnableReturnData {
 		log.ReturnData = rData

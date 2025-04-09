@@ -65,7 +65,7 @@ func TestChainIterator(t *testing.T) {
 		WriteCanonicalHash(chainDb, block.Hash(), block.NumberU64())
 	}
 
-	var cases = []struct {
+	cases := []struct {
 		from, to uint64
 		reverse  bool
 		expect   []int

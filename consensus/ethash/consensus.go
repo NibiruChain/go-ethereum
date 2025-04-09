@@ -514,9 +514,11 @@ func calcDifficultyFrontier(time uint64, parent *types.Header) *big.Int {
 }
 
 // Exported for fuzzing
-var FrontierDifficultyCalculator = calcDifficultyFrontier
-var HomesteadDifficultyCalculator = calcDifficultyHomestead
-var DynamicDifficultyCalculator = makeDifficultyCalculator
+var (
+	FrontierDifficultyCalculator  = calcDifficultyFrontier
+	HomesteadDifficultyCalculator = calcDifficultyHomestead
+	DynamicDifficultyCalculator   = makeDifficultyCalculator
+)
 
 // verifySeal checks whether a block satisfies the PoW difficulty requirements,
 // either using the usual ethash cache for it, or alternatively using a full DAG

@@ -254,7 +254,7 @@ func (w *wizard) manageGenesis() {
 		fmt.Printf("  Will create %s.json\n", w.network)
 
 		folder := w.readDefaultString(".")
-		if err := os.MkdirAll(folder, 0755); err != nil {
+		if err := os.MkdirAll(folder, 0o755); err != nil {
 			log.Error("Failed to create spec folder", "folder", folder, "err", err)
 			return
 		}
@@ -262,7 +262,7 @@ func (w *wizard) manageGenesis() {
 
 		// Export the native genesis spec used by puppeth and Geth
 		gethJson := filepath.Join(folder, fmt.Sprintf("%s.json", w.network))
-		if err := os.WriteFile(gethJson, out, 0644); err != nil {
+		if err := os.WriteFile(gethJson, out, 0o644); err != nil {
 			log.Error("Failed to save genesis file", "err", err)
 			return
 		}

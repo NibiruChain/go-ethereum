@@ -6,7 +6,7 @@ import (
 )
 
 func TestMetricsSorting(t *testing.T) {
-	var namedMetrics = namedMetricSlice{
+	namedMetrics := namedMetricSlice{
 		{name: "zzz"},
 		{name: "bbb"},
 		{name: "fff"},

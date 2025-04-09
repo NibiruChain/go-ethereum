@@ -201,7 +201,6 @@ func (_CheckpointOracle *CheckpointOracleTransactorRaw) Transact(opts *bind.Tran
 func (_CheckpointOracle *CheckpointOracleCaller) GetAllAdmin(opts *bind.CallOpts) ([]common.Address, error) {
 	var out []interface{}
 	err := _CheckpointOracle.contract.Call(opts, &out, "GetAllAdmin")
-
 	if err != nil {
 		return *new([]common.Address), err
 	}
@@ -209,7 +208,6 @@ func (_CheckpointOracle *CheckpointOracleCaller) GetAllAdmin(opts *bind.CallOpts
 	out0 := *abi.ConvertType(out[0], new([]common.Address)).(*[]common.Address)
 
 	return out0, err
-
 }
 
 // GetAllAdmin is a free data retrieval call binding the contract method 0x45848dfc.
@@ -232,7 +230,6 @@ func (_CheckpointOracle *CheckpointOracleCallerSession) GetAllAdmin() ([]common.
 func (_CheckpointOracle *CheckpointOracleCaller) GetLatestCheckpoint(opts *bind.CallOpts) (uint64, [32]byte, *big.Int, error) {
 	var out []interface{}
 	err := _CheckpointOracle.contract.Call(opts, &out, "GetLatestCheckpoint")
-
 	if err != nil {
 		return *new(uint64), *new([32]byte), *new(*big.Int), err
 	}
@@ -242,7 +239,6 @@ func (_CheckpointOracle *CheckpointOracleCaller) GetLatestCheckpoint(opts *bind.
 	out2 := *abi.ConvertType(out[2], new(*big.Int)).(**big.Int)
 
 	return out0, out1, out2, err
-
 }
 
 // GetLatestCheckpoint is a free data retrieval call binding the contract method 0x4d6a304c.
@@ -361,7 +357,6 @@ type CheckpointOracleNewCheckpointVote struct {
 //
 // Solidity: event NewCheckpointVote(uint64 indexed index, bytes32 checkpointHash, uint8 v, bytes32 r, bytes32 s)
 func (_CheckpointOracle *CheckpointOracleFilterer) FilterNewCheckpointVote(opts *bind.FilterOpts, index []uint64) (*CheckpointOracleNewCheckpointVoteIterator, error) {
-
 	var indexRule []interface{}
 	for _, indexItem := range index {
 		indexRule = append(indexRule, indexItem)
@@ -378,7 +373,6 @@ func (_CheckpointOracle *CheckpointOracleFilterer) FilterNewCheckpointVote(opts 
 //
 // Solidity: event NewCheckpointVote(uint64 indexed index, bytes32 checkpointHash, uint8 v, bytes32 r, bytes32 s)
 func (_CheckpointOracle *CheckpointOracleFilterer) WatchNewCheckpointVote(opts *bind.WatchOpts, sink chan<- *CheckpointOracleNewCheckpointVote, index []uint64) (event.Subscription, error) {
-
 	var indexRule []interface{}
 	for _, indexItem := range index {
 		indexRule = append(indexRule, indexItem)

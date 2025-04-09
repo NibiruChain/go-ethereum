@@ -79,7 +79,8 @@ func testGetBlockHeaders(t *testing.T, protocol int) {
 		{
 			&GetBlockHeadersData{Origin: hashOrNumber{Hash: bc.GetBlockByNumber(limit / 2).Hash()}, Amount: 1},
 			[]common.Hash{bc.GetBlockByNumber(limit / 2).Hash()},
-		}, {
+		},
+		{
 			&GetBlockHeadersData{Origin: hashOrNumber{Number: limit / 2}, Amount: 1},
 			[]common.Hash{bc.GetBlockByNumber(limit / 2).Hash()},
 		},
@@ -91,7 +92,8 @@ func testGetBlockHeaders(t *testing.T, protocol int) {
 				bc.GetBlockByNumber(limit/2 + 1).Hash(),
 				bc.GetBlockByNumber(limit/2 + 2).Hash(),
 			},
-		}, {
+		},
+		{
 			&GetBlockHeadersData{Origin: hashOrNumber{Number: limit / 2}, Amount: 3, Reverse: true},
 			[]common.Hash{
 				bc.GetBlockByNumber(limit / 2).Hash(),
@@ -107,7 +109,8 @@ func testGetBlockHeaders(t *testing.T, protocol int) {
 				bc.GetBlockByNumber(limit/2 + 4).Hash(),
 				bc.GetBlockByNumber(limit/2 + 8).Hash(),
 			},
-		}, {
+		},
+		{
 			&GetBlockHeadersData{Origin: hashOrNumber{Number: limit / 2}, Skip: 3, Amount: 3, Reverse: true},
 			[]common.Hash{
 				bc.GetBlockByNumber(limit / 2).Hash(),
@@ -119,7 +122,8 @@ func testGetBlockHeaders(t *testing.T, protocol int) {
 		{
 			&GetBlockHeadersData{Origin: hashOrNumber{Number: 0}, Amount: 1},
 			[]common.Hash{bc.GetBlockByNumber(0).Hash()},
-		}, {
+		},
+		{
 			&GetBlockHeadersData{Origin: hashOrNumber{Number: bc.CurrentBlock().NumberU64()}, Amount: 1},
 			[]common.Hash{bc.CurrentBlock().Hash()},
 		},
@@ -135,7 +139,8 @@ func testGetBlockHeaders(t *testing.T, protocol int) {
 				bc.GetBlockByNumber(bc.CurrentBlock().NumberU64() - 4).Hash(),
 				bc.GetBlockByNumber(bc.CurrentBlock().NumberU64()).Hash(),
 			},
-		}, {
+		},
+		{
 			&GetBlockHeadersData{Origin: hashOrNumber{Number: 4}, Skip: 3, Amount: 3, Reverse: true},
 			[]common.Hash{
 				bc.GetBlockByNumber(4).Hash(),
@@ -149,7 +154,8 @@ func testGetBlockHeaders(t *testing.T, protocol int) {
 				bc.GetBlockByNumber(bc.CurrentBlock().NumberU64() - 4).Hash(),
 				bc.GetBlockByNumber(bc.CurrentBlock().NumberU64() - 1).Hash(),
 			},
-		}, {
+		},
+		{
 			&GetBlockHeadersData{Origin: hashOrNumber{Number: 4}, Skip: 2, Amount: 3, Reverse: true},
 			[]common.Hash{
 				bc.GetBlockByNumber(4).Hash(),
@@ -160,7 +166,8 @@ func testGetBlockHeaders(t *testing.T, protocol int) {
 		{
 			&GetBlockHeadersData{Origin: hashOrNumber{Hash: unknown}, Amount: 1},
 			[]common.Hash{},
-		}, {
+		},
+		{
 			&GetBlockHeadersData{Origin: hashOrNumber{Number: bc.CurrentBlock().NumberU64() + 1}, Amount: 1},
 			[]common.Hash{},
 		},

@@ -52,9 +52,7 @@ const (
 	MaxTxStatus              = 256 // Amount of transactions to queried per request
 )
 
-var (
-	errTooManyInvalidRequest = errors.New("too many invalid requests made")
-)
+var errTooManyInvalidRequest = errors.New("too many invalid requests made")
 
 // serverHandler is responsible for serving light client and process
 // all incoming light requests.

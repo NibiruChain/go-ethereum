@@ -85,7 +85,7 @@ func openFreezerFileForAppend(filename string) (*os.File, error) {
 	// Open the file without the O_APPEND flag
 	// because it has differing behaviour during Truncate operations
 	// on different OS's
-	file, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE, 0644)
+	file, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE, 0o644)
 	if err != nil {
 		return nil, err
 	}
@@ -98,12 +98,12 @@ func openFreezerFileForAppend(filename string) (*os.File, error) {
 
 // openFreezerFileForReadOnly opens a freezer table file for read only access
 func openFreezerFileForReadOnly(filename string) (*os.File, error) {
-	return os.OpenFile(filename, os.O_RDONLY, 0644)
+	return os.OpenFile(filename, os.O_RDONLY, 0o644)
 }
 
 // openFreezerFileTruncated opens a freezer table making sure it is truncated
 func openFreezerFileTruncated(filename string) (*os.File, error) {
-	return os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+	return os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o644)
 }
 
 // truncateFreezerFile resizes a freezer table file and seeks to the end

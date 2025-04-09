@@ -111,7 +111,7 @@ func TestNormalize(t *testing.T) {
 			sumAmount += ref.basket.items[i].amount
 			sumValue += ref.basket.items[i].value
 		}
-		var epsilon = 0.01
+		epsilon := 0.01
 		if float64(sumAmount)*(1+epsilon) < float64(sumValue) || float64(sumAmount)*(1-epsilon) > float64(sumValue) {
 			t.Fatalf("Failed to normalize sumAmount: %d sumValue: %d", sumAmount, sumValue)
 		}

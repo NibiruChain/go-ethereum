@@ -78,6 +78,7 @@ type alwaysDenyUI struct{}
 func (alwaysDenyUI) OnInputRequired(info core.UserInputRequest) (core.UserInputResponse, error) {
 	return core.UserInputResponse{}, nil
 }
+
 func (alwaysDenyUI) RegisterUIServer(api *core.UIServerAPI) {
 }
 
@@ -173,7 +174,6 @@ func TestSignTxRequest(t *testing.T) {
 		return
 	}
 	from, err := mixAddr("0000000000000000000000000000000000001337")
-
 	if err != nil {
 		t.Error(err)
 		return
@@ -182,7 +182,8 @@ func TestSignTxRequest(t *testing.T) {
 	resp, err := r.ApproveTx(&core.SignTxRequest{
 		Transaction: apitypes.SendTxArgs{
 			From: *from,
-			To:   to},
+			To:   to,
+		},
 		Callinfo: nil,
 		Meta:     core.Metadata{Remote: "remoteip", Local: "localip", Scheme: "inproc"},
 	})
@@ -261,7 +262,7 @@ func TestForwarding(t *testing.T) {
 	r.ShowError("test")
 	r.ShowInfo("test")
 
-	//This one is not forwarded
+	// This one is not forwarded
 	r.OnApprovedTx(ethapi.SignTransactionResult{})
 
 	expCalls := 6
@@ -292,6 +293,7 @@ func TestMissingFunc(t *testing.T) {
 	}
 	t.Logf("Err %v", err)
 }
+
 func TestStorage(t *testing.T) {
 	js := `
 	function testStorage(){
@@ -327,7 +329,6 @@ func TestStorage(t *testing.T) {
 	}
 
 	v, err := r.execute("testStorage", nil)
-
 	if err != nil {
 		t.Errorf("Unexpected error %v", err)
 	}

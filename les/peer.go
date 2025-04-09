@@ -80,8 +80,10 @@ type keyValueEntry struct {
 	Value rlp.RawValue
 }
 
-type keyValueList []keyValueEntry
-type keyValueMap map[string]rlp.RawValue
+type (
+	keyValueList []keyValueEntry
+	keyValueMap  map[string]rlp.RawValue
+)
 
 func (l keyValueList) add(key string, val interface{}) keyValueList {
 	var entry keyValueEntry

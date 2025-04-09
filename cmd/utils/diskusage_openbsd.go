@@ -32,7 +32,7 @@ func getFreeDiskSpace(path string) (uint64, error) {
 	}
 
 	// Available blocks * size per block = available space in bytes
-	var bavail = stat.F_bavail
+	bavail := stat.F_bavail
 	// Not sure if the following check is necessary for OpenBSD
 	if stat.F_bavail < 0 {
 		// FreeBSD can have a negative number of blocks available

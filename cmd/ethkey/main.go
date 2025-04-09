@@ -29,8 +29,10 @@ const (
 )
 
 // Git SHA1 commit hash of the release (set via linker flags)
-var gitCommit = ""
-var gitDate = ""
+var (
+	gitCommit = ""
+	gitDate   = ""
+)
 
 var app *cli.App
 

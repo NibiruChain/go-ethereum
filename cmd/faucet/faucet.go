@@ -89,9 +89,7 @@ var (
 	sepoliaFlag = flag.Bool("sepolia", false, "Initializes the faucet with Sepolia network config")
 )
 
-var (
-	ether = new(big.Int).Exp(big.NewInt(10), big.NewInt(18), nil)
-)
+var ether = new(big.Int).Exp(big.NewInt(10), big.NewInt(18), nil)
 
 var (
 	gitCommit = "" // Git SHA1 commit hash of the release (set via linker flags)

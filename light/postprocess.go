@@ -275,7 +275,7 @@ func (c *ChtIndexerBackend) Prune(threshold uint64) error {
 	// Always keep genesis header in database.
 	start, end := uint64(1), (threshold+1)*c.sectionSize
 
-	var batch = c.diskdb.NewBatch()
+	batch := c.diskdb.NewBatch()
 	for {
 		numbers, hashes := rawdb.ReadAllCanonicalHashes(c.diskdb, start, end, 10240)
 		if len(numbers) == 0 {

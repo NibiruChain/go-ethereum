@@ -136,5 +136,5 @@ func (db *Database) AddSelector(selector string, data []byte) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(db.customPath, blob, 0600)
+	return os.WriteFile(db.customPath, blob, 0o600)
 }

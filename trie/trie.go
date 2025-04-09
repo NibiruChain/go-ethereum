@@ -103,7 +103,7 @@ func New(owner common.Hash, root common.Hash, db *Database) (*Trie, error) {
 	trie := &Trie{
 		owner: owner,
 		db:    db,
-		//tracer: newTracer(),
+		// tracer: newTracer(),
 	}
 	if root != (common.Hash{}) && root != emptyRoot {
 		rootnode, err := trie.resolveHash(root[:], nil)
@@ -633,6 +633,6 @@ func (t *Trie) Reset() {
 	t.root = nil
 	t.owner = common.Hash{}
 	t.unhashed = 0
-	//t.db = nil
+	// t.db = nil
 	t.tracer.reset()
 }

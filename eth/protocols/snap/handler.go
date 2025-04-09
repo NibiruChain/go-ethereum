@@ -366,7 +366,7 @@ func ServiceGetStorageRangesQuery(chain *core.BlockChain, req *GetStorageRangesP
 		if len(req.Origin) > 0 {
 			origin, req.Origin = common.BytesToHash(req.Origin), nil
 		}
-		var limit = common.HexToHash("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")
+		limit := common.HexToHash("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")
 		if len(req.Limit) > 0 {
 			limit, req.Limit = common.BytesToHash(req.Limit), nil
 		}

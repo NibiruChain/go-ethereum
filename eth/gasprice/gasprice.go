@@ -242,6 +242,7 @@ func (s *txSorter) Len() int { return len(s.txs) }
 func (s *txSorter) Swap(i, j int) {
 	s.txs[i], s.txs[j] = s.txs[j], s.txs[i]
 }
+
 func (s *txSorter) Less(i, j int) bool {
 	// It's okay to discard the error because a tx would never be
 	// accepted into a block with an invalid effective tip.

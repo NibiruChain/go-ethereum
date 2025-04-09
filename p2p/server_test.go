@@ -305,7 +305,7 @@ func TestServerPeerLimits(t *testing.T) {
 	clientkey := newkey()
 	clientnode := enode.NewV4(&clientkey.PublicKey, nil, 0, 0)
 
-	var tp = &setupTransport{
+	tp := &setupTransport{
 		pubkey: &clientkey.PublicKey,
 		phs: protoHandshake{
 			ID: crypto.FromECDSAPub(&clientkey.PublicKey)[1:],
@@ -477,6 +477,7 @@ func (c *setupTransport) doProtoHandshake(our *protoHandshake) (*protoHandshake,
 	}
 	return &c.phs, nil
 }
+
 func (c *setupTransport) close(err error) {
 	c.calls += "close,"
 	c.closeErr = err
@@ -486,6 +487,7 @@ func (c *setupTransport) close(err error) {
 func (c *setupTransport) WriteMsg(Msg) error {
 	panic("WriteMsg called on setupTransport")
 }
+
 func (c *setupTransport) ReadMsg() (Msg, error) {
 	panic("ReadMsg called on setupTransport")
 }

@@ -50,6 +50,7 @@ func ValidEip(eipNum int) bool {
 	_, ok := activators[eipNum]
 	return ok
 }
+
 func ActivateableEips() []string {
 	var nums []string
 	for k := range activators {
@@ -81,7 +82,7 @@ func enable1884(jt *JumpTable) {
 
 func opSelfBalance(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte, error) {
 	balance, _ := uint256.FromBig(interpreter.evm.StateDB.GetBalance(scope.Contract.Address()))
-	scope.Stack.push(balance)
+	scope.Stack.Push(balance)
 	return nil, nil
 }
 
@@ -100,7 +101,7 @@ func enable1344(jt *JumpTable) {
 // opChainID implements CHAINID opcode
 func opChainID(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte, error) {
 	chainId, _ := uint256.FromBig(interpreter.evm.chainConfig.ChainID)
-	scope.Stack.push(chainId)
+	scope.Stack.Push(chainId)
 	return nil, nil
 }
 
@@ -172,7 +173,7 @@ func enable3198(jt *JumpTable) {
 // opBaseFee implements BASEFEE opcode
 func opBaseFee(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte, error) {
 	baseFee, _ := uint256.FromBig(interpreter.evm.Context.BaseFee)
-	scope.Stack.push(baseFee)
+	scope.Stack.Push(baseFee)
 	return nil, nil
 }
 
@@ -189,6 +190,6 @@ func enable3855(jt *JumpTable) {
 
 // opPush0 implements the PUSH0 opcode
 func opPush0(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte, error) {
-	scope.Stack.push(new(uint256.Int))
+	scope.Stack.Push(new(uint256.Int))
 	return nil, nil
 }

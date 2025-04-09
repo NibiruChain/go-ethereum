@@ -86,7 +86,8 @@ var (
 	TupleF, _           = NewType("tuple", "struct Overloader.F", []ArgumentMarshaling{
 		{Name: "_f", Type: "uint256"},
 		{Name: "__f", Type: "uint256"},
-		{Name: "f", Type: "uint256"}})
+		{Name: "f", Type: "uint256"},
+	})
 )
 
 var methods = map[string]Method{
@@ -165,8 +166,9 @@ func TestInvalidABI(t *testing.T) {
 
 // TestConstructor tests a constructor function.
 // The test is based on the following contract:
-// 	contract TestConstructor {
-// 		constructor(uint256 a, uint256 b) public{}
+//
+//	contract TestConstructor {
+//		constructor(uint256 a, uint256 b) public{}
 //	}
 func TestConstructor(t *testing.T) {
 	json := `[{	"inputs": [{"internalType": "uint256","name": "a","type": "uint256"	},{	"internalType": "uint256","name": "b","type": "uint256"}],"stateMutability": "nonpayable","type": "constructor"}]`
@@ -724,16 +726,19 @@ func TestBareEvents(t *testing.T) {
 }
 
 // TestUnpackEvent is based on this contract:
-//    contract T {
-//      event received(address sender, uint amount, bytes memo);
-//      event receivedAddr(address sender);
-//      function receive(bytes memo) external payable {
-//        received(msg.sender, msg.value, memo);
-//        receivedAddr(msg.sender);
-//      }
-//    }
+//
+//	contract T {
+//	  event received(address sender, uint amount, bytes memo);
+//	  event receivedAddr(address sender);
+//	  function receive(bytes memo) external payable {
+//	    received(msg.sender, msg.value, memo);
+//	    receivedAddr(msg.sender);
+//	  }
+//	}
+//
 // When receive("X") is called with sender 0x00... and value 1, it produces this tx receipt:
-//   receipt{status=1 cgas=23949 bloom=00000000004000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000040200000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000 logs=[log: b6818c8064f645cd82d99b59a1a267d6d61117ef [75fd880d39c1daf53b6547ab6cb59451fc6452d27caa90e5b6649dd8293b9eed] 000000000000000000000000376c47978271565f56deb45495afa69e59c16ab200000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000000158 9ae378b6d4409eada347a5dc0c180f186cb62dc68fcc0f043425eb917335aa28 0 95d429d309bb9d753954195fe2d69bd140b4ae731b9b5b605c34323de162cf00 0]}
+//
+//	receipt{status=1 cgas=23949 bloom=00000000004000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000040200000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000 logs=[log: b6818c8064f645cd82d99b59a1a267d6d61117ef [75fd880d39c1daf53b6547ab6cb59451fc6452d27caa90e5b6649dd8293b9eed] 000000000000000000000000376c47978271565f56deb45495afa69e59c16ab200000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000000158 9ae378b6d4409eada347a5dc0c180f186cb62dc68fcc0f043425eb917335aa28 0 95d429d309bb9d753954195fe2d69bd140b4ae731b9b5b605c34323de162cf00 0]}
 func TestUnpackEvent(t *testing.T) {
 	const abiJSON = `[{"constant":false,"inputs":[{"name":"memo","type":"bytes"}],"name":"receive","outputs":[],"payable":true,"stateMutability":"payable","type":"function"},{"anonymous":false,"inputs":[{"indexed":false,"name":"sender","type":"address"},{"indexed":false,"name":"amount","type":"uint256"},{"indexed":false,"name":"memo","type":"bytes"}],"name":"received","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"name":"sender","type":"address"}],"name":"receivedAddr","type":"event"}]`
 	abi, err := JSON(strings.NewReader(abiJSON))
@@ -874,12 +879,12 @@ func TestUnpackMethodIntoMap(t *testing.T) {
 
 func TestUnpackIntoMapNamingConflict(t *testing.T) {
 	// Two methods have the same name
-	var abiJSON = `[{"constant":false,"inputs":[{"name":"memo","type":"bytes"}],"name":"get","outputs":[],"payable":true,"stateMutability":"payable","type":"function"},{"constant":false,"inputs":[],"name":"send","outputs":[{"name":"amount","type":"uint256"}],"payable":true,"stateMutability":"payable","type":"function"},{"constant":false,"inputs":[{"name":"addr","type":"address"}],"name":"get","outputs":[{"name":"hash","type":"bytes"}],"payable":true,"stateMutability":"payable","type":"function"}]`
+	abiJSON := `[{"constant":false,"inputs":[{"name":"memo","type":"bytes"}],"name":"get","outputs":[],"payable":true,"stateMutability":"payable","type":"function"},{"constant":false,"inputs":[],"name":"send","outputs":[{"name":"amount","type":"uint256"}],"payable":true,"stateMutability":"payable","type":"function"},{"constant":false,"inputs":[{"name":"addr","type":"address"}],"name":"get","outputs":[{"name":"hash","type":"bytes"}],"payable":true,"stateMutability":"payable","type":"function"}]`
 	abi, err := JSON(strings.NewReader(abiJSON))
 	if err != nil {
 		t.Fatal(err)
 	}
-	var hexdata = `00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000000158`
+	hexdata := `00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000000158`
 	data, err := hex.DecodeString(hexdata)
 	if err != nil {
 		t.Fatal(err)
@@ -1078,8 +1083,9 @@ func TestDoubleDuplicateMethodNames(t *testing.T) {
 // TestDoubleDuplicateEventNames checks that if send0 already exists, there won't be a name
 // conflict and that the second send event will be renamed send1.
 // The test runs the abi of the following contract.
-// 	contract DuplicateEvent {
-// 		event send(uint256 a);
+//
+//	contract DuplicateEvent {
+//		event send(uint256 a);
 //		event send0();
 //		event send();
 //	}
@@ -1106,7 +1112,8 @@ func TestDoubleDuplicateEventNames(t *testing.T) {
 // TestUnnamedEventParam checks that an event with unnamed parameters is
 // correctly handled.
 // The test runs the abi of the following contract.
-// 	contract TestEvent {
+//
+//	contract TestEvent {
 //		event send(uint256, uint256);
 //	}
 func TestUnnamedEventParam(t *testing.T) {
@@ -1131,7 +1138,7 @@ func TestUnnamedEventParam(t *testing.T) {
 func TestUnpackRevert(t *testing.T) {
 	t.Parallel()
 
-	var cases = []struct {
+	cases := []struct {
 		input     string
 		expect    string
 		expectErr error

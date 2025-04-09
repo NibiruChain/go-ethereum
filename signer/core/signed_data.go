@@ -74,7 +74,7 @@ func (api *SignerAPI) sign(req *SignDataRequest, legacyV bool) (hexutil.Bytes, e
 //
 // Different types of validation occur.
 func (api *SignerAPI) SignData(ctx context.Context, contentType string, addr common.MixedcaseAddress, data interface{}) (hexutil.Bytes, error) {
-	var req, transformV, err = api.determineSignatureFormat(ctx, contentType, addr, data)
+	req, transformV, err := api.determineSignatureFormat(ctx, contentType, addr, data)
 	if err != nil {
 		return nil, err
 	}
@@ -246,7 +246,8 @@ func (api *SignerAPI) signTypedData(ctx context.Context, addr common.MixedcaseAd
 		Rawdata:     []byte(rawData),
 		Messages:    messages,
 		Hash:        sighash,
-		Address:     addr}
+		Address:     addr,
+	}
 	if validationMessages != nil {
 		req.Callinfo = validationMessages.Messages
 	}

@@ -45,24 +45,30 @@ type doTxNotify struct {
 	peer   string
 	hashes []common.Hash
 }
+
 type doTxEnqueue struct {
 	peer   string
 	txs    []*types.Transaction
 	direct bool
 }
+
 type doWait struct {
 	time time.Duration
 	step bool
 }
-type doDrop string
-type doFunc func()
+type (
+	doDrop string
+	doFunc func()
+)
 
-type isWaiting map[string][]common.Hash
-type isScheduled struct {
-	tracking map[string][]common.Hash
-	fetching map[string][]common.Hash
-	dangling map[string][]common.Hash
-}
+type (
+	isWaiting   map[string][]common.Hash
+	isScheduled struct {
+		tracking map[string][]common.Hash
+		fetching map[string][]common.Hash
+		dangling map[string][]common.Hash
+	}
+)
 type isUnderpriced int
 
 // txFetcherTest represents a test scenario that can be executed by the test

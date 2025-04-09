@@ -31,9 +31,7 @@ import (
 	"github.com/ethereum/go-ethereum/trie"
 )
 
-var (
-	sha3Nil = crypto.Keccak256Hash(nil)
-)
+var sha3Nil = crypto.Keccak256Hash(nil)
 
 func NewState(ctx context.Context, head *types.Header, odr OdrBackend) *state.StateDB {
 	state, _ := state.New(head.Root, NewStateDatabase(ctx, head, odr), nil)

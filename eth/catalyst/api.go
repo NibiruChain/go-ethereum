@@ -143,14 +143,21 @@ func NewConsensusAPI(eth *eth.Ethereum) *ConsensusAPI {
 
 // ForkchoiceUpdatedV1 has several responsibilities:
 // If the method is called with an empty head block:
-// 		we return success, which can be used to check if the engine API is enabled
+//
+//	we return success, which can be used to check if the engine API is enabled
+//
 // If the total difficulty was not reached:
-// 		we return INVALID
+//
+//	we return INVALID
+//
 // If the finalizedBlockHash is set:
-// 		we check if we have the finalizedBlockHash in our db, if not we start a sync
+//
+//	we check if we have the finalizedBlockHash in our db, if not we start a sync
+//
 // We try to set our blockchain to the headBlock
 // If there are payloadAttributes:
-// 		we try to assemble a block with the payloadAttributes and return its payloadID
+//
+//	we try to assemble a block with the payloadAttributes and return its payloadID
 func (api *ConsensusAPI) ForkchoiceUpdatedV1(update beacon.ForkchoiceStateV1, payloadAttributes *beacon.PayloadAttributesV1) (beacon.ForkChoiceResponse, error) {
 	api.forkchoiceLock.Lock()
 	defer api.forkchoiceLock.Unlock()
@@ -562,9 +569,7 @@ func (api *ConsensusAPI) heartbeat() {
 	// attached, so no need to print scary warnings to the user.
 	time.Sleep(beaconUpdateStartupTimeout)
 
-	var (
-		offlineLogged time.Time
-	)
+	var offlineLogged time.Time
 	for {
 		// Sleep a bit and retrieve the last known consensus updates
 		time.Sleep(5 * time.Second)

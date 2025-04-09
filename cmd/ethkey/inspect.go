@@ -33,12 +33,10 @@ type outputInspect struct {
 	PrivateKey string
 }
 
-var (
-	privateFlag = &cli.BoolFlag{
-		Name:  "private",
-		Usage: "include the private key in the output",
-	}
-)
+var privateFlag = &cli.BoolFlag{
+	Name:  "private",
+	Usage: "include the private key in the output",
+}
 
 var commandInspect = &cli.Command{
 	Name:      "inspect",

@@ -78,12 +78,15 @@ func (w *lightPeerWrapper) Head() (common.Hash, *big.Int) { return w.peer.Head()
 func (w *lightPeerWrapper) RequestHeadersByHash(h common.Hash, amount int, skip int, reverse bool, sink chan *eth.Response) (*eth.Request, error) {
 	return w.peer.RequestHeadersByHash(h, amount, skip, reverse, sink)
 }
+
 func (w *lightPeerWrapper) RequestHeadersByNumber(i uint64, amount int, skip int, reverse bool, sink chan *eth.Response) (*eth.Request, error) {
 	return w.peer.RequestHeadersByNumber(i, amount, skip, reverse, sink)
 }
+
 func (w *lightPeerWrapper) RequestBodies([]common.Hash, chan *eth.Response) (*eth.Request, error) {
 	panic("RequestBodies not supported in light client mode sync")
 }
+
 func (w *lightPeerWrapper) RequestReceipts([]common.Hash, chan *eth.Response) (*eth.Request, error) {
 	panic("RequestReceipts not supported in light client mode sync")
 }

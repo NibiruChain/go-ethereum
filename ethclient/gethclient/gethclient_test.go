@@ -117,22 +117,28 @@ func TestGethClient(t *testing.T) {
 		{
 			"TestGetProof",
 			func(t *testing.T) { testGetProof(t, client) },
-		}, {
+		},
+		{
 			"TestGCStats",
 			func(t *testing.T) { testGCStats(t, client) },
-		}, {
+		},
+		{
 			"TestMemStats",
 			func(t *testing.T) { testMemStats(t, client) },
-		}, {
+		},
+		{
 			"TestGetNodeInfo",
 			func(t *testing.T) { testGetNodeInfo(t, client) },
-		}, {
+		},
+		{
 			"TestSetHead",
 			func(t *testing.T) { testSetHead(t, client) },
-		}, {
+		},
+		{
 			"TestSubscribePendingTxs",
 			func(t *testing.T) { testSubscribePendingTransactions(t, client) },
-		}, {
+		},
+		{
 			"TestCallContract",
 			func(t *testing.T) { testCallContract(t, client) },
 		},

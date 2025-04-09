@@ -35,7 +35,7 @@ func TestNodeDB(t *testing.T) {
 	ndb := newNodeDB(rawdb.NewMemoryDatabase(), mclock.System{})
 	defer ndb.close()
 
-	var cases = []struct {
+	cases := []struct {
 		id       enode.ID
 		ip       string
 		balance  utils.ExpiredValue
@@ -99,7 +99,7 @@ func TestNodeDBExpiration(t *testing.T) {
 	ndb.evictCallBack = callback
 	ndb.cleanupHook = func() { done <- struct{}{} }
 
-	var cases = []struct {
+	cases := []struct {
 		id      []byte
 		neg     bool
 		balance utils.ExpiredValue

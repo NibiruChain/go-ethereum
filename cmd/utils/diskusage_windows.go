@@ -23,7 +23,6 @@ import (
 )
 
 func getFreeDiskSpace(path string) (uint64, error) {
-
 	cwd, err := windows.UTF16PtrFromString(path)
 	if err != nil {
 		return 0, fmt.Errorf("failed to call UTF16PtrFromString: %v", err)

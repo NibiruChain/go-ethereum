@@ -1877,9 +1877,7 @@ func (s *Syncer) processAccountResponse(res *accountResponse) {
 func (s *Syncer) processBytecodeResponse(res *bytecodeResponse) {
 	batch := s.db.NewBatch()
 
-	var (
-		codes uint64
-	)
+	var codes uint64
 	for i, hash := range res.hashes {
 		code := res.codes[i]
 

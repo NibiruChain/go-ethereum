@@ -540,7 +540,7 @@ func (api *DebugAPI) GetAccessibleState(from, to rpc.BlockNumber) (uint64, error
 		pivot = *p
 		log.Info("Found fast-sync pivot marker", "number", pivot)
 	}
-	var resolveNum = func(num rpc.BlockNumber) (uint64, error) {
+	resolveNum := func(num rpc.BlockNumber) (uint64, error) {
 		// We don't have state for pending (-2), so treat it as latest
 		if num.Int64() < 0 {
 			block := api.eth.blockchain.CurrentBlock()

@@ -87,7 +87,7 @@ func (e *ExecAdapter) NewNode(config *NodeConfig) (Node, error) {
 	// create the node directory using the first 12 characters of the ID
 	// as Unix socket paths cannot be longer than 256 characters
 	dir := filepath.Join(e.BaseDir, config.ID.String()[:12])
-	if err := os.Mkdir(dir, 0755); err != nil {
+	if err := os.Mkdir(dir, 0o755); err != nil {
 		return nil, fmt.Errorf("error creating node directory: %s", err)
 	}
 
@@ -387,7 +387,7 @@ func initLogging() {
 	if err := json.Unmarshal([]byte(confEnv), &conf); err != nil {
 		return
 	}
-	var writer = os.Stderr
+	writer := os.Stderr
 	if conf.Node.LogFile != "" {
 		logWriter, err := os.Create(conf.Node.LogFile)
 		if err != nil {
@@ -395,7 +395,7 @@ func initLogging() {
 		}
 		writer = logWriter
 	}
-	var verbosity = log.LvlInfo
+	verbosity := log.LvlInfo
 	if conf.Node.LogVerbosity <= log.LvlTrace && conf.Node.LogVerbosity >= log.LvlCrit {
 		verbosity = conf.Node.LogVerbosity
 	}

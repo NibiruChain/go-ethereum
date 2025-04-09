@@ -158,11 +158,13 @@ func Handle(backend Backend, peer *Peer) error {
 	}
 }
 
-type msgHandler func(backend Backend, msg Decoder, peer *Peer) error
-type Decoder interface {
-	Decode(val interface{}) error
-	Time() time.Time
-}
+type (
+	msgHandler func(backend Backend, msg Decoder, peer *Peer) error
+	Decoder    interface {
+		Decode(val interface{}) error
+		Time() time.Time
+	}
+)
 
 var eth66 = map[uint64]msgHandler{
 	NewBlockHashesMsg:             handleNewBlockhashes,
@@ -209,7 +211,7 @@ func handleMessage(backend Backend, peer *Peer) error {
 	}
 	defer msg.Discard()
 
-	var handlers = eth66
+	handlers := eth66
 	if peer.Version() >= ETH67 {
 		handlers = eth67
 	}

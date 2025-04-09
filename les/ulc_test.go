@@ -48,7 +48,7 @@ func testULCAnnounceThreshold(t *testing.T, protocol int) {
 		return c, teardown
 	}
 
-	var cases = []struct {
+	cases := []struct {
 		height    []int
 		threshold int
 		expect    uint64

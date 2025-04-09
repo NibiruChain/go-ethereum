@@ -57,7 +57,7 @@ func runTests(ctx *cli.Context, tests []utesting.Test) error {
 		log.Root().SetHandler(log.DiscardHandler())
 	}
 	// Run the tests.
-	var run = utesting.RunTests
+	run := utesting.RunTests
 	if ctx.Bool(testTAPFlag.Name) {
 		run = utesting.RunTAP
 	}

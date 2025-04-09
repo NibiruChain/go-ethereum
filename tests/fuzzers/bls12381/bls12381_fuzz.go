@@ -197,7 +197,7 @@ func FuzzCrossG1MultiExp(data []byte) int {
 			break
 		}
 		gethScalars = append(gethScalars, s)
-		var gnarkScalar = &fr.Element{}
+		gnarkScalar := &fr.Element{}
 		gnarkScalar = gnarkScalar.SetBigInt(s).FromMont()
 		gnarkScalars = append(gnarkScalars, *gnarkScalar)
 

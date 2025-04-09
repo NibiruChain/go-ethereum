@@ -291,7 +291,7 @@ func (snaptest *gappedSnapshotTest) test(t *testing.T) {
 	gappedBlocks, _ := GenerateChain(params.TestChainConfig, blocks[len(blocks)-1], snaptest.engine, snaptest.gendb, snaptest.gapped, func(i int, b *BlockGen) {})
 
 	// Insert a few more blocks without enabling snapshot
-	var cacheConfig = &CacheConfig{
+	cacheConfig := &CacheConfig{
 		TrieCleanLimit: 256,
 		TrieDirtyLimit: 256,
 		TrieTimeLimit:  5 * time.Minute,

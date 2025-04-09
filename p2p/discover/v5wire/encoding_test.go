@@ -38,8 +38,7 @@ import (
 
 // To regenerate discv5 test vectors, run
 //
-//     go test -run TestVectors -write-test-vectors
-//
+//	go test -run TestVectors -write-test-vectors
 var writeTestVectorsFlag = flag.Bool("write-test-vectors", false, "Overwrite discv5 test vectors in testdata/")
 
 var (
@@ -607,7 +606,7 @@ func hexFile(file string) []byte {
 
 // writeTestVector writes a test vector file with the given commentary and binary data.
 func writeTestVector(file, comment string, data []byte) {
-	fd, err := os.OpenFile(file, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	fd, err := os.OpenFile(file, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o644)
 	if err != nil {
 		panic(err)
 	}

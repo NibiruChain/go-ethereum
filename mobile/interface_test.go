@@ -26,7 +26,7 @@ import (
 )
 
 func TestInterfaceGetSet(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		method string
 		input  interface{}
 		expect interface{}
