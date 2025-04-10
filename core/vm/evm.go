@@ -363,7 +363,6 @@ func (evm *EVM) StaticCall(caller ContractRef, addr common.Address, input []byte
 	}
 
 	if p, isPrecompile := evm.Precompile(addr); isPrecompile {
-		// Note: delegate call is not allowed to modify state on precompiles
 		ret, gas, err = evm.RunPrecompiledContract(p, caller, input, gas, new(big.Int))
 	} else {
 		// At this point, we use a copy of address. If we don't, the go compiler will
