@@ -94,7 +94,7 @@ func fuzz(id byte, data []byte) int {
 	copy(cpy, data)
 	contract := vm.NewPrecompile(vm.AccountRef(common.Address{}), precompile, common.Big0, gas)
 	contract.Input = cpy
-	_, err := precompile.Run(nil, contract, false)
+	_, err := precompile.Run(nil, contract)
 	if !bytes.Equal(cpy, data) {
 		panic(fmt.Sprintf("input data modified, precompile %d: %x %x", id, data, cpy))
 	}
