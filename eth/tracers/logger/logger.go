@@ -172,9 +172,7 @@ func (l *StructLogger) CaptureState(pc uint64, op vm.OpCode, gas, cost uint64, s
 	var stck []uint256.Int
 	if !l.cfg.DisableStack {
 		stck = make([]uint256.Int, len(stack.Data))
-		for i, item := range stack.Data {
-			stck[i] = item
-		}
+		copy(stck, stack.Data)
 	}
 	stackData := stack.Data
 	stackLen := len(stackData)
