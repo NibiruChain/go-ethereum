@@ -36,16 +36,6 @@ const (
 	blsMapG2      = byte(18)
 )
 
-func FuzzG1Add(data []byte) int      { return fuzz(blsG1Add, data) }
-func FuzzG1Mul(data []byte) int      { return fuzz(blsG1Mul, data) }
-func FuzzG1MultiExp(data []byte) int { return fuzz(blsG1MultiExp, data) }
-func FuzzG2Add(data []byte) int      { return fuzz(blsG2Add, data) }
-func FuzzG2Mul(data []byte) int      { return fuzz(blsG2Mul, data) }
-func FuzzG2MultiExp(data []byte) int { return fuzz(blsG2MultiExp, data) }
-func FuzzPairing(data []byte) int    { return fuzz(blsPairing, data) }
-func FuzzMapG1(data []byte) int      { return fuzz(blsMapG1, data) }
-func FuzzMapG2(data []byte) int      { return fuzz(blsMapG2, data) }
-
 func checkInput(id byte, inputLen int) bool {
 	switch id {
 	case blsG1Add:
@@ -70,14 +60,14 @@ func checkInput(id byte, inputLen int) bool {
 	panic("programmer error")
 }
 
-// The fuzzer functions must return
-// 1 if the fuzzer should increase priority of the
+// The function must return
 //
-//	given input during subsequent fuzzing (for example, the input is lexically
-//	correct and was parsed successfully);
+//   - 1 if the fuzzer should increase priority of the
+//     given input during subsequent fuzzing (for example, the input is lexically
+//     correct and was parsed successfully);
+//   - -1 if the input must not be added to corpus even if gives new coverage; and
+//   - 0 otherwise
 //
-// -1 if the input must not be added to corpus even if gives new coverage; and
-// 0  otherwise
 // other values are reserved for future use.
 func fuzz(id byte, data []byte) int {
 	// Even on bad input, it should not crash, so we still test the gas calc
@@ -92,9 +82,7 @@ func fuzz(id byte, data []byte) int {
 	}
 	cpy := make([]byte, len(data))
 	copy(cpy, data)
-	contract := vm.NewPrecompile(vm.AccountRef(common.Address{}), precompile, common.Big0, gas)
-	contract.Input = cpy
-	_, err := precompile.Run(nil, contract, false)
+	_, err := precompile.Run(cpy)
 	if !bytes.Equal(cpy, data) {
 		panic(fmt.Sprintf("input data modified, precompile %d: %x %x", id, data, cpy))
 	}

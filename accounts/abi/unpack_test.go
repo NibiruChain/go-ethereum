@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
+	"math"
 	"math/big"
 	"reflect"
 	"strconv"
@@ -32,9 +33,10 @@ import (
 
 // TestUnpack tests the general pack/unpack tests in packing_test.go
 func TestUnpack(t *testing.T) {
+	t.Parallel()
 	for i, test := range packUnpackTests {
 		t.Run(strconv.Itoa(i)+" "+test.def, func(t *testing.T) {
-			// Unpack
+			//Unpack
 			def := fmt.Sprintf(`[{ "name" : "method", "type": "function", "outputs": %s}]`, test.def)
 			abi, err := JSON(strings.NewReader(def))
 			if err != nil {
@@ -205,13 +207,13 @@ var unpackTests = []unpackTest{
 		def:  `[{"type":"bool"}]`,
 		enc:  "",
 		want: false,
-		err:  "abi: attempting to unmarshall an empty string while arguments are expected",
+		err:  "abi: attempting to unmarshal an empty string while arguments are expected",
 	},
 	{
 		def:  `[{"type":"bytes32","indexed":true},{"type":"uint256","indexed":false}]`,
 		enc:  "",
 		want: false,
-		err:  "abi: attempting to unmarshall an empty string while arguments are expected",
+		err:  "abi: attempting to unmarshal an empty string while arguments are expected",
 	},
 	{
 		def:  `[{"type":"bool","indexed":true},{"type":"uint64","indexed":true}]`,
@@ -223,9 +225,10 @@ var unpackTests = []unpackTest{
 // TestLocalUnpackTests runs test specially designed only for unpacking.
 // All test cases that can be used to test packing and unpacking should move to packing_test.go
 func TestLocalUnpackTests(t *testing.T) {
+	t.Parallel()
 	for i, test := range unpackTests {
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
-			// Unpack
+			//Unpack
 			def := fmt.Sprintf(`[{ "name" : "method", "type": "function", "outputs": %s}]`, test.def)
 			abi, err := JSON(strings.NewReader(def))
 			if err != nil {
@@ -250,6 +253,7 @@ func TestLocalUnpackTests(t *testing.T) {
 }
 
 func TestUnpackIntoInterfaceSetDynamicArrayOutput(t *testing.T) {
+	t.Parallel()
 	abi, err := JSON(strings.NewReader(`[{"constant":true,"inputs":[],"name":"testDynamicFixedBytes15","outputs":[{"name":"","type":"bytes15[]"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"testDynamicFixedBytes32","outputs":[{"name":"","type":"bytes32[]"}],"payable":false,"stateMutability":"view","type":"function"}]`))
 	if err != nil {
 		t.Fatal(err)
@@ -306,7 +310,7 @@ type methodMultiOutput struct {
 func methodMultiReturn(require *require.Assertions) (ABI, []byte, methodMultiOutput) {
 	const definition = `[
 	{ "name" : "multi", "type": "function", "outputs": [ { "name": "Int", "type": "uint256" }, { "name": "String", "type": "string" } ] }]`
-	expected := methodMultiOutput{big.NewInt(1), "hello"}
+	var expected = methodMultiOutput{big.NewInt(1), "hello"}
 
 	abi, err := JSON(strings.NewReader(definition))
 	require.NoError(err)
@@ -320,6 +324,7 @@ func methodMultiReturn(require *require.Assertions) (ABI, []byte, methodMultiOut
 }
 
 func TestMethodMultiReturn(t *testing.T) {
+	t.Parallel()
 	type reversed struct {
 		String string
 		Int    *big.Int
@@ -332,7 +337,7 @@ func TestMethodMultiReturn(t *testing.T) {
 
 	abi, data, expected := methodMultiReturn(require.New(t))
 	bigint := new(big.Int)
-	testCases := []struct {
+	var testCases = []struct {
 		dest     interface{}
 		expected interface{}
 		error    string
@@ -399,6 +404,7 @@ func TestMethodMultiReturn(t *testing.T) {
 }
 
 func TestMultiReturnWithArray(t *testing.T) {
+	t.Parallel()
 	const definition = `[{"name" : "multi", "type": "function", "outputs": [{"type": "uint64[3]"}, {"type": "uint64"}]}]`
 	abi, err := JSON(strings.NewReader(definition))
 	if err != nil {
@@ -422,6 +428,7 @@ func TestMultiReturnWithArray(t *testing.T) {
 }
 
 func TestMultiReturnWithStringArray(t *testing.T) {
+	t.Parallel()
 	const definition = `[{"name" : "multi", "type": "function", "outputs": [{"name": "","type": "uint256[3]"},{"name": "","type": "address"},{"name": "","type": "string[2]"},{"name": "","type": "bool"}]}]`
 	abi, err := JSON(strings.NewReader(definition))
 	if err != nil {
@@ -452,6 +459,7 @@ func TestMultiReturnWithStringArray(t *testing.T) {
 }
 
 func TestMultiReturnWithStringSlice(t *testing.T) {
+	t.Parallel()
 	const definition = `[{"name" : "multi", "type": "function", "outputs": [{"name": "","type": "string[]"},{"name": "","type": "uint256[]"}]}]`
 	abi, err := JSON(strings.NewReader(definition))
 	if err != nil {
@@ -484,6 +492,7 @@ func TestMultiReturnWithStringSlice(t *testing.T) {
 }
 
 func TestMultiReturnWithDeeplyNestedArray(t *testing.T) {
+	t.Parallel()
 	// Similar to TestMultiReturnWithArray, but with a special case in mind:
 	//  values of nested static arrays count towards the size as well, and any element following
 	//  after such nested array argument should be read with the correct offset,
@@ -497,7 +506,7 @@ func TestMultiReturnWithDeeplyNestedArray(t *testing.T) {
 	// construct the test array, each 3 char element is joined with 61 '0' chars,
 	// to from the ((3 + 61) * 0.5) = 32 byte elements in the array.
 	buff.Write(common.Hex2Bytes(strings.Join([]string{
-		"", // empty, to apply the 61-char separator to the first element as well.
+		"", //empty, to apply the 61-char separator to the first element as well.
 		"111", "112", "113", "121", "122", "123",
 		"211", "212", "213", "221", "222", "223",
 		"311", "312", "313", "321", "322", "323",
@@ -524,6 +533,7 @@ func TestMultiReturnWithDeeplyNestedArray(t *testing.T) {
 }
 
 func TestUnmarshal(t *testing.T) {
+	t.Parallel()
 	const definition = `[
 	{ "name" : "int", "type": "function", "outputs": [ { "type": "uint256" } ] },
 	{ "name" : "bool", "type": "function", "outputs": [ { "type": "bool" } ] },
@@ -773,6 +783,7 @@ func TestUnmarshal(t *testing.T) {
 }
 
 func TestUnpackTuple(t *testing.T) {
+	t.Parallel()
 	const simpleTuple = `[{"name":"tuple","type":"function","outputs":[{"type":"tuple","name":"ret","components":[{"type":"int256","name":"a"},{"type":"int256","name":"b"}]}]}]`
 	abi, err := JSON(strings.NewReader(simpleTuple))
 	if err != nil {
@@ -791,7 +802,7 @@ func TestUnpackTuple(t *testing.T) {
 	type r struct {
 		Result v
 	}
-	ret0 := new(r)
+	var ret0 = new(r)
 	err = abi.UnpackIntoInterface(ret0, "tuple", buff.Bytes())
 
 	if err != nil {
@@ -850,7 +861,7 @@ func TestUnpackTuple(t *testing.T) {
 		A      *big.Int
 	}
 	var ret Ret
-	expected := Ret{
+	var expected = Ret{
 		FieldS: S{
 			A: big.NewInt(1),
 			B: []*big.Int{big.NewInt(1), big.NewInt(2)},
@@ -875,6 +886,7 @@ func TestUnpackTuple(t *testing.T) {
 }
 
 func TestOOMMaliciousInput(t *testing.T) {
+	t.Parallel()
 	oomTests := []unpackTest{
 		{
 			def: `[{"type": "uint8[]"}]`,
@@ -940,6 +952,168 @@ func TestOOMMaliciousInput(t *testing.T) {
 		_, err = abi.Methods["method"].Outputs.UnpackValues(encb)
 		if err == nil {
 			t.Fatalf("Expected error on malicious input, test %d", i)
+		}
+	}
+}
+
+func TestPackAndUnpackIncompatibleNumber(t *testing.T) {
+	t.Parallel()
+	var encodeABI Arguments
+	uint256Ty, err := NewType("uint256", "", nil)
+	if err != nil {
+		panic(err)
+	}
+	encodeABI = Arguments{
+		{Type: uint256Ty},
+	}
+
+	maxU64, ok := new(big.Int).SetString(strconv.FormatUint(math.MaxUint64, 10), 10)
+	if !ok {
+		panic("bug")
+	}
+	maxU64Plus1 := new(big.Int).Add(maxU64, big.NewInt(1))
+	cases := []struct {
+		decodeType  string
+		inputValue  *big.Int
+		err         error
+		expectValue interface{}
+	}{
+		{
+			decodeType: "uint8",
+			inputValue: big.NewInt(math.MaxUint8 + 1),
+			err:        errBadUint8,
+		},
+		{
+			decodeType:  "uint8",
+			inputValue:  big.NewInt(math.MaxUint8),
+			err:         nil,
+			expectValue: uint8(math.MaxUint8),
+		},
+		{
+			decodeType: "uint16",
+			inputValue: big.NewInt(math.MaxUint16 + 1),
+			err:        errBadUint16,
+		},
+		{
+			decodeType:  "uint16",
+			inputValue:  big.NewInt(math.MaxUint16),
+			err:         nil,
+			expectValue: uint16(math.MaxUint16),
+		},
+		{
+			decodeType: "uint32",
+			inputValue: big.NewInt(math.MaxUint32 + 1),
+			err:        errBadUint32,
+		},
+		{
+			decodeType:  "uint32",
+			inputValue:  big.NewInt(math.MaxUint32),
+			err:         nil,
+			expectValue: uint32(math.MaxUint32),
+		},
+		{
+			decodeType: "uint64",
+			inputValue: maxU64Plus1,
+			err:        errBadUint64,
+		},
+		{
+			decodeType:  "uint64",
+			inputValue:  maxU64,
+			err:         nil,
+			expectValue: uint64(math.MaxUint64),
+		},
+		{
+			decodeType:  "uint256",
+			inputValue:  maxU64Plus1,
+			err:         nil,
+			expectValue: maxU64Plus1,
+		},
+		{
+			decodeType: "int8",
+			inputValue: big.NewInt(math.MaxInt8 + 1),
+			err:        errBadInt8,
+		},
+		{
+			decodeType: "int8",
+			inputValue: big.NewInt(math.MinInt8 - 1),
+			err:        errBadInt8,
+		},
+		{
+			decodeType:  "int8",
+			inputValue:  big.NewInt(math.MaxInt8),
+			err:         nil,
+			expectValue: int8(math.MaxInt8),
+		},
+		{
+			decodeType: "int16",
+			inputValue: big.NewInt(math.MaxInt16 + 1),
+			err:        errBadInt16,
+		},
+		{
+			decodeType: "int16",
+			inputValue: big.NewInt(math.MinInt16 - 1),
+			err:        errBadInt16,
+		},
+		{
+			decodeType:  "int16",
+			inputValue:  big.NewInt(math.MaxInt16),
+			err:         nil,
+			expectValue: int16(math.MaxInt16),
+		},
+		{
+			decodeType: "int32",
+			inputValue: big.NewInt(math.MaxInt32 + 1),
+			err:        errBadInt32,
+		},
+		{
+			decodeType: "int32",
+			inputValue: big.NewInt(math.MinInt32 - 1),
+			err:        errBadInt32,
+		},
+		{
+			decodeType:  "int32",
+			inputValue:  big.NewInt(math.MaxInt32),
+			err:         nil,
+			expectValue: int32(math.MaxInt32),
+		},
+		{
+			decodeType: "int64",
+			inputValue: new(big.Int).Add(big.NewInt(math.MaxInt64), big.NewInt(1)),
+			err:        errBadInt64,
+		},
+		{
+			decodeType: "int64",
+			inputValue: new(big.Int).Sub(big.NewInt(math.MinInt64), big.NewInt(1)),
+			err:        errBadInt64,
+		},
+		{
+			decodeType:  "int64",
+			inputValue:  big.NewInt(math.MaxInt64),
+			err:         nil,
+			expectValue: int64(math.MaxInt64),
+		},
+	}
+	for i, testCase := range cases {
+		packed, err := encodeABI.Pack(testCase.inputValue)
+		if err != nil {
+			panic(err)
+		}
+		ty, err := NewType(testCase.decodeType, "", nil)
+		if err != nil {
+			panic(err)
+		}
+		decodeABI := Arguments{
+			{Type: ty},
+		}
+		decoded, err := decodeABI.Unpack(packed)
+		if err != testCase.err {
+			t.Fatalf("Expected error %v, actual error %v. case %d", testCase.err, err, i)
+		}
+		if err != nil {
+			continue
+		}
+		if !reflect.DeepEqual(decoded[0], testCase.expectValue) {
+			t.Fatalf("Expected value %v, actual value %v", testCase.expectValue, decoded[0])
 		}
 	}
 }

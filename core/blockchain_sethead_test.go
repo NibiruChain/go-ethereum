@@ -22,6 +22,7 @@ package core
 import (
 	"fmt"
 	"math/big"
+	"path"
 	"strings"
 	"testing"
 	"time"
@@ -29,9 +30,13 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/consensus/ethash"
 	"github.com/ethereum/go-ethereum/core/rawdb"
+	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/params"
+	"github.com/ethereum/go-ethereum/triedb"
+	"github.com/ethereum/go-ethereum/triedb/hashdb"
+	"github.com/ethereum/go-ethereum/triedb/pathdb"
 )
 
 // rewindTest is a test case for chain rollback upon user request.
@@ -328,7 +333,6 @@ func testShortOldForkedSetHead(t *testing.T, snapshots bool) {
 func TestShortOldForkedSnapSyncedSetHead(t *testing.T) {
 	testShortOldForkedSnapSyncedSetHead(t, false)
 }
-
 func TestShortOldForkedSnapSyncedSetHeadWithSnapshots(t *testing.T) {
 	testShortOldForkedSnapSyncedSetHead(t, true)
 }
@@ -378,7 +382,6 @@ func testShortOldForkedSnapSyncedSetHead(t *testing.T, snapshots bool) {
 func TestShortOldForkedSnapSyncingSetHead(t *testing.T) {
 	testShortOldForkedSnapSyncingSetHead(t, false)
 }
-
 func TestShortOldForkedSnapSyncingSetHeadWithSnapshots(t *testing.T) {
 	testShortOldForkedSnapSyncingSetHead(t, true)
 }
@@ -482,7 +485,6 @@ func testShortNewlyForkedSetHead(t *testing.T, snapshots bool) {
 func TestShortNewlyForkedSnapSyncedSetHead(t *testing.T) {
 	testShortNewlyForkedSnapSyncedSetHead(t, false)
 }
-
 func TestShortNewlyForkedSnapSyncedSetHeadWithSnapshots(t *testing.T) {
 	testShortNewlyForkedSnapSyncedSetHead(t, true)
 }
@@ -536,7 +538,6 @@ func testShortNewlyForkedSnapSyncedSetHead(t *testing.T, snapshots bool) {
 func TestShortNewlyForkedSnapSyncingSetHead(t *testing.T) {
 	testShortNewlyForkedSnapSyncingSetHead(t, false)
 }
-
 func TestShortNewlyForkedSnapSyncingSetHeadWithSnapshots(t *testing.T) {
 	testShortNewlyForkedSnapSyncingSetHead(t, true)
 }
@@ -640,7 +641,6 @@ func testShortReorgedSetHead(t *testing.T, snapshots bool) {
 func TestShortReorgedSnapSyncedSetHead(t *testing.T) {
 	testShortReorgedSnapSyncedSetHead(t, false)
 }
-
 func TestShortReorgedSnapSyncedSetHeadWithSnapshots(t *testing.T) {
 	testShortReorgedSnapSyncedSetHead(t, true)
 }
@@ -693,7 +693,6 @@ func testShortReorgedSnapSyncedSetHead(t *testing.T, snapshots bool) {
 func TestShortReorgedSnapSyncingSetHead(t *testing.T) {
 	testShortReorgedSnapSyncingSetHead(t, false)
 }
-
 func TestShortReorgedSnapSyncingSetHeadWithSnapshots(t *testing.T) {
 	testShortReorgedSnapSyncingSetHead(t, true)
 }
@@ -837,7 +836,6 @@ func testLongDeepSetHead(t *testing.T, snapshots bool) {
 func TestLongSnapSyncedShallowSetHead(t *testing.T) {
 	testLongSnapSyncedShallowSetHead(t, false)
 }
-
 func TestLongSnapSyncedShallowSetHeadWithSnapshots(t *testing.T) {
 	testLongSnapSyncedShallowSetHead(t, true)
 }
@@ -935,7 +933,6 @@ func testLongSnapSyncedDeepSetHead(t *testing.T, snapshots bool) {
 func TestLongSnapSyncingShallowSetHead(t *testing.T) {
 	testLongSnapSyncingShallowSetHead(t, false)
 }
-
 func TestLongSnapSyncingShallowSetHeadWithSnapshots(t *testing.T) {
 	testLongSnapSyncingShallowSetHead(t, true)
 }
@@ -987,7 +984,6 @@ func testLongSnapSyncingShallowSetHead(t *testing.T, snapshots bool) {
 func TestLongSnapSyncingDeepSetHead(t *testing.T) {
 	testLongSnapSyncingDeepSetHead(t, false)
 }
-
 func TestLongSnapSyncingDeepSetHeadWithSnapshots(t *testing.T) {
 	testLongSnapSyncingDeepSetHead(t, true)
 }
@@ -1040,7 +1036,6 @@ func testLongSnapSyncingDeepSetHead(t *testing.T, snapshots bool) {
 func TestLongOldForkedShallowSetHead(t *testing.T) {
 	testLongOldForkedShallowSetHead(t, false)
 }
-
 func TestLongOldForkedShallowSetHeadWithSnapshots(t *testing.T) {
 	testLongOldForkedShallowSetHead(t, true)
 }
@@ -1144,7 +1139,6 @@ func testLongOldForkedDeepSetHead(t *testing.T, snapshots bool) {
 func TestLongOldForkedSnapSyncedShallowSetHead(t *testing.T) {
 	testLongOldForkedSnapSyncedShallowSetHead(t, false)
 }
-
 func TestLongOldForkedSnapSyncedShallowSetHeadWithSnapshots(t *testing.T) {
 	testLongOldForkedSnapSyncedShallowSetHead(t, true)
 }
@@ -1199,7 +1193,6 @@ func testLongOldForkedSnapSyncedShallowSetHead(t *testing.T, snapshots bool) {
 func TestLongOldForkedSnapSyncedDeepSetHead(t *testing.T) {
 	testLongOldForkedSnapSyncedDeepSetHead(t, false)
 }
-
 func TestLongOldForkedSnapSyncedDeepSetHeadWithSnapshots(t *testing.T) {
 	testLongOldForkedSnapSyncedDeepSetHead(t, true)
 }
@@ -1253,7 +1246,6 @@ func testLongOldForkedSnapSyncedDeepSetHead(t *testing.T, snapshots bool) {
 func TestLongOldForkedSnapSyncingShallowSetHead(t *testing.T) {
 	testLongOldForkedSnapSyncingShallowSetHead(t, false)
 }
-
 func TestLongOldForkedSnapSyncingShallowSetHeadWithSnapshots(t *testing.T) {
 	testLongOldForkedSnapSyncingShallowSetHead(t, true)
 }
@@ -1308,7 +1300,6 @@ func testLongOldForkedSnapSyncingShallowSetHead(t *testing.T, snapshots bool) {
 func TestLongOldForkedSnapSyncingDeepSetHead(t *testing.T) {
 	testLongOldForkedSnapSyncingDeepSetHead(t, false)
 }
-
 func TestLongOldForkedSnapSyncingDeepSetHeadWithSnapshots(t *testing.T) {
 	testLongOldForkedSnapSyncingDeepSetHead(t, true)
 }
@@ -1360,7 +1351,6 @@ func testLongOldForkedSnapSyncingDeepSetHead(t *testing.T, snapshots bool) {
 func TestLongNewerForkedShallowSetHead(t *testing.T) {
 	testLongNewerForkedShallowSetHead(t, false)
 }
-
 func TestLongNewerForkedShallowSetHeadWithSnapshots(t *testing.T) {
 	testLongNewerForkedShallowSetHead(t, true)
 }
@@ -1413,7 +1403,6 @@ func testLongNewerForkedShallowSetHead(t *testing.T, snapshots bool) {
 func TestLongNewerForkedDeepSetHead(t *testing.T) {
 	testLongNewerForkedDeepSetHead(t, false)
 }
-
 func TestLongNewerForkedDeepSetHeadWithSnapshots(t *testing.T) {
 	testLongNewerForkedDeepSetHead(t, true)
 }
@@ -1465,7 +1454,6 @@ func testLongNewerForkedDeepSetHead(t *testing.T, snapshots bool) {
 func TestLongNewerForkedSnapSyncedShallowSetHead(t *testing.T) {
 	testLongNewerForkedSnapSyncedShallowSetHead(t, false)
 }
-
 func TestLongNewerForkedSnapSyncedShallowSetHeadWithSnapshots(t *testing.T) {
 	testLongNewerForkedSnapSyncedShallowSetHead(t, true)
 }
@@ -1518,7 +1506,6 @@ func testLongNewerForkedSnapSyncedShallowSetHead(t *testing.T, snapshots bool) {
 func TestLongNewerForkedSnapSyncedDeepSetHead(t *testing.T) {
 	testLongNewerForkedSnapSyncedDeepSetHead(t, false)
 }
-
 func TestLongNewerForkedSnapSyncedDeepSetHeadWithSnapshots(t *testing.T) {
 	testLongNewerForkedSnapSyncedDeepSetHead(t, true)
 }
@@ -1570,7 +1557,6 @@ func testLongNewerForkedSnapSyncedDeepSetHead(t *testing.T, snapshots bool) {
 func TestLongNewerForkedSnapSyncingShallowSetHead(t *testing.T) {
 	testLongNewerForkedSnapSyncingShallowSetHead(t, false)
 }
-
 func TestLongNewerForkedSnapSyncingShallowSetHeadWithSnapshots(t *testing.T) {
 	testLongNewerForkedSnapSyncingShallowSetHead(t, true)
 }
@@ -1623,7 +1609,6 @@ func testLongNewerForkedSnapSyncingShallowSetHead(t *testing.T, snapshots bool) 
 func TestLongNewerForkedSnapSyncingDeepSetHead(t *testing.T) {
 	testLongNewerForkedSnapSyncingDeepSetHead(t, false)
 }
-
 func TestLongNewerForkedSnapSyncingDeepSetHeadWithSnapshots(t *testing.T) {
 	testLongNewerForkedSnapSyncingDeepSetHead(t, true)
 }
@@ -1768,7 +1753,6 @@ func testLongReorgedDeepSetHead(t *testing.T, snapshots bool) {
 func TestLongReorgedSnapSyncedShallowSetHead(t *testing.T) {
 	testLongReorgedSnapSyncedShallowSetHead(t, false)
 }
-
 func TestLongReorgedSnapSyncedShallowSetHeadWithSnapshots(t *testing.T) {
 	testLongReorgedSnapSyncedShallowSetHead(t, true)
 }
@@ -1821,7 +1805,6 @@ func testLongReorgedSnapSyncedShallowSetHead(t *testing.T, snapshots bool) {
 func TestLongReorgedSnapSyncedDeepSetHead(t *testing.T) {
 	testLongReorgedSnapSyncedDeepSetHead(t, false)
 }
-
 func TestLongReorgedSnapSyncedDeepSetHeadWithSnapshots(t *testing.T) {
 	testLongReorgedSnapSyncedDeepSetHead(t, true)
 }
@@ -1874,7 +1857,6 @@ func testLongReorgedSnapSyncedDeepSetHead(t *testing.T, snapshots bool) {
 func TestLongReorgedSnapSyncingShallowSetHead(t *testing.T) {
 	testLongReorgedSnapSyncingShallowSetHead(t, false)
 }
-
 func TestLongReorgedSnapSyncingShallowSetHeadWithSnapshots(t *testing.T) {
 	testLongReorgedSnapSyncingShallowSetHead(t, true)
 }
@@ -1928,7 +1910,6 @@ func testLongReorgedSnapSyncingShallowSetHead(t *testing.T, snapshots bool) {
 func TestLongReorgedSnapSyncingDeepSetHead(t *testing.T) {
 	testLongReorgedSnapSyncingDeepSetHead(t, false)
 }
-
 func TestLongReorgedSnapSyncingDeepSetHeadWithSnapshots(t *testing.T) {
 	testLongReorgedSnapSyncingDeepSetHead(t, true)
 }
@@ -1973,14 +1954,25 @@ func testLongReorgedSnapSyncingDeepSetHead(t *testing.T, snapshots bool) {
 }
 
 func testSetHead(t *testing.T, tt *rewindTest, snapshots bool) {
+	for _, scheme := range []string{rawdb.HashScheme, rawdb.PathScheme} {
+		testSetHeadWithScheme(t, tt, snapshots, scheme)
+	}
+}
+
+func testSetHeadWithScheme(t *testing.T, tt *rewindTest, snapshots bool, scheme string) {
 	// It's hard to follow the test case, visualize the input
 	// log.Root().SetHandler(log.LvlFilterHandler(log.LvlTrace, log.StreamHandler(os.Stderr, log.TerminalFormat(true))))
 	// fmt.Println(tt.dump(false))
 
 	// Create a temporary persistent database
 	datadir := t.TempDir()
+	ancient := path.Join(datadir, "ancient")
 
-	db, err := rawdb.NewLevelDBDatabaseWithFreezer(datadir, 0, 0, datadir, "", false)
+	db, err := rawdb.Open(rawdb.OpenOptions{
+		Directory:         datadir,
+		AncientsDirectory: ancient,
+		Ephemeral:         true,
+	})
 	if err != nil {
 		t.Fatalf("Failed to create persistent database: %v", err)
 	}
@@ -1988,34 +1980,40 @@ func testSetHead(t *testing.T, tt *rewindTest, snapshots bool) {
 
 	// Initialize a fresh chain
 	var (
-		genesis = (&Genesis{BaseFee: big.NewInt(params.InitialBaseFee)}).MustCommit(db)
-		engine  = ethash.NewFullFaker()
-		config  = &CacheConfig{
+		gspec = &Genesis{
+			BaseFee: big.NewInt(params.InitialBaseFee),
+			Config:  params.AllEthashProtocolChanges,
+		}
+		engine = ethash.NewFullFaker()
+		config = &CacheConfig{
 			TrieCleanLimit: 256,
 			TrieDirtyLimit: 256,
 			TrieTimeLimit:  5 * time.Minute,
 			SnapshotLimit:  0, // Disable snapshot
+			StateScheme:    scheme,
 		}
 	)
 	if snapshots {
 		config.SnapshotLimit = 256
 		config.SnapshotWait = true
 	}
-	chain, err := NewBlockChain(db, config, params.AllEthashProtocolChanges, engine, vm.Config{}, nil, nil)
+	chain, err := NewBlockChain(db, config, gspec, nil, engine, vm.Config{}, nil, nil)
 	if err != nil {
 		t.Fatalf("Failed to create chain: %v", err)
 	}
+	defer chain.Stop()
+
 	// If sidechain blocks are needed, make a light chain and import it
 	var sideblocks types.Blocks
 	if tt.sidechainBlocks > 0 {
-		sideblocks, _ = GenerateChain(params.TestChainConfig, genesis, engine, rawdb.NewMemoryDatabase(), tt.sidechainBlocks, func(i int, b *BlockGen) {
+		sideblocks, _ = GenerateChain(gspec.Config, gspec.ToBlock(), engine, rawdb.NewMemoryDatabase(), tt.sidechainBlocks, func(i int, b *BlockGen) {
 			b.SetCoinbase(common.Address{0x01})
 		})
 		if _, err := chain.InsertChain(sideblocks); err != nil {
 			t.Fatalf("Failed to import side chain: %v", err)
 		}
 	}
-	canonblocks, _ := GenerateChain(params.TestChainConfig, genesis, engine, rawdb.NewMemoryDatabase(), tt.canonicalBlocks, func(i int, b *BlockGen) {
+	canonblocks, _ := GenerateChain(gspec.Config, gspec.ToBlock(), engine, rawdb.NewMemoryDatabase(), tt.canonicalBlocks, func(i int, b *BlockGen) {
 		b.SetCoinbase(common.Address{0x02})
 		b.SetDifficulty(big.NewInt(1000000))
 	})
@@ -2023,7 +2021,7 @@ func testSetHead(t *testing.T, tt *rewindTest, snapshots bool) {
 		t.Fatalf("Failed to import canonical chain start: %v", err)
 	}
 	if tt.commitBlock > 0 {
-		chain.stateCache.TrieDB().Commit(canonblocks[tt.commitBlock-1].Root(), true, nil)
+		chain.triedb.Commit(canonblocks[tt.commitBlock-1].Root(), false)
 		if snapshots {
 			if err := chain.snaps.Cap(canonblocks[tt.commitBlock-1].Root(), 0); err != nil {
 				t.Fatalf("Failed to flatten snapshots: %v", err)
@@ -2033,13 +2031,17 @@ func testSetHead(t *testing.T, tt *rewindTest, snapshots bool) {
 	if _, err := chain.InsertChain(canonblocks[tt.commitBlock:]); err != nil {
 		t.Fatalf("Failed to import canonical chain tail: %v", err)
 	}
-	// Manually dereference anything not committed to not have to work with 128+ tries
-	for _, block := range sideblocks {
-		chain.stateCache.TrieDB().Dereference(block.Root())
+	// Reopen the trie database without persisting in-memory dirty nodes.
+	chain.triedb.Close()
+	dbconfig := &triedb.Config{}
+	if scheme == rawdb.PathScheme {
+		dbconfig.PathDB = pathdb.Defaults
+	} else {
+		dbconfig.HashDB = hashdb.Defaults
 	}
-	for _, block := range canonblocks {
-		chain.stateCache.TrieDB().Dereference(block.Root())
-	}
+	chain.triedb = triedb.NewDatabase(chain.db, dbconfig)
+	chain.stateCache = state.NewDatabaseWithNodeDB(chain.db, chain.triedb)
+
 	// Force run a freeze cycle
 	type freezer interface {
 		Freeze(threshold uint64) error
@@ -2063,11 +2065,11 @@ func testSetHead(t *testing.T, tt *rewindTest, snapshots bool) {
 	if head := chain.CurrentHeader(); head.Number.Uint64() != tt.expHeadHeader {
 		t.Errorf("Head header mismatch: have %d, want %d", head.Number, tt.expHeadHeader)
 	}
-	if head := chain.CurrentFastBlock(); head.NumberU64() != tt.expHeadFastBlock {
-		t.Errorf("Head fast block mismatch: have %d, want %d", head.NumberU64(), tt.expHeadFastBlock)
+	if head := chain.CurrentSnapBlock(); head.Number.Uint64() != tt.expHeadFastBlock {
+		t.Errorf("Head fast block mismatch: have %d, want %d", head.Number, tt.expHeadFastBlock)
 	}
-	if head := chain.CurrentBlock(); head.NumberU64() != tt.expHeadBlock {
-		t.Errorf("Head block mismatch: have %d, want %d", head.NumberU64(), tt.expHeadBlock)
+	if head := chain.CurrentBlock(); head.Number.Uint64() != tt.expHeadBlock {
+		t.Errorf("Head block mismatch: have %d, want %d", head.Number, tt.expHeadBlock)
 	}
 	if frozen, err := db.(freezer).Ancients(); err != nil {
 		t.Errorf("Failed to retrieve ancient count: %v\n", err)

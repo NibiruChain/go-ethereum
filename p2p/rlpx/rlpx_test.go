@@ -368,7 +368,7 @@ func TestHandshakeForwardCompatibility(t *testing.T) {
 }
 
 func BenchmarkHandshakeRead(b *testing.B) {
-	input := unhex(eip8HandshakeAuthTests[0].input)
+	var input = unhex(eip8HandshakeAuthTests[0].input)
 
 	for i := 0; i < b.N; i++ {
 		var (
@@ -421,7 +421,7 @@ func BenchmarkThroughput(b *testing.B) {
 	}
 	conn2.SetSnappy(true)
 	if err := <-handshakeDone; err != nil {
-		b.Fatal("server hanshake error:", err)
+		b.Fatal("server handshake error:", err)
 	}
 
 	// Read N messages.

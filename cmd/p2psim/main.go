@@ -100,14 +100,8 @@ var (
 	}
 )
 
-var (
-	// Git information set by linker when building with ci.go.
-	gitCommit string
-	gitDate   string
-)
-
 func main() {
-	app := flags.NewApp(gitCommit, gitDate, "devp2p simulation command-line client")
+	app := flags.NewApp("devp2p simulation command-line client")
 	app.Flags = []cli.Flag{
 		apiFlag,
 	}
@@ -423,9 +417,7 @@ func rpcNode(ctx *cli.Context) error {
 }
 
 func rpcSubscribe(client *rpc.Client, out io.Writer, method string, args ...string) error {
-	parts := strings.SplitN(method, "_", 2)
-	namespace := parts[0]
-	method = parts[1]
+	namespace, method, _ := strings.Cut(method, "_")
 	ch := make(chan interface{})
 	subArgs := make([]interface{}, len(args)+1)
 	subArgs[0] = method

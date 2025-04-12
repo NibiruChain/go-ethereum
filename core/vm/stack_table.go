@@ -23,7 +23,6 @@ import (
 func minSwapStack(n int) int {
 	return minStack(n, n)
 }
-
 func maxSwapStack(n int) int {
 	return maxStack(n, n)
 }
@@ -31,7 +30,6 @@ func maxSwapStack(n int) int {
 func minDupStack(n int) int {
 	return minStack(n, n+1)
 }
-
 func maxDupStack(n int) int {
 	return maxStack(n, n+1)
 }
@@ -39,7 +37,6 @@ func maxDupStack(n int) int {
 func maxStack(pop, push int) int {
 	return int(params.StackLimit) + pop - push
 }
-
 func minStack(pops, push int) int {
 	return pops
 }

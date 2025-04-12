@@ -18,6 +18,7 @@ package snapshot
 
 import (
 	"bytes"
+	crand "crypto/rand"
 	"math/rand"
 	"testing"
 
@@ -73,7 +74,7 @@ func TestMergeBasics(t *testing.T) {
 		if rand.Intn(2) == 0 {
 			accStorage := make(map[common.Hash][]byte)
 			value := make([]byte, 32)
-			rand.Read(value)
+			crand.Read(value)
 			accStorage[randomHash()] = value
 			storage[h] = accStorage
 		}
@@ -123,7 +124,9 @@ func TestMergeBasics(t *testing.T) {
 
 // TestMergeDelete tests some deletion
 func TestMergeDelete(t *testing.T) {
-	storage := make(map[common.Hash]map[common.Hash][]byte)
+	var (
+		storage = make(map[common.Hash]map[common.Hash][]byte)
+	)
 	// Fill up a parent
 	h1 := common.HexToHash("0x01")
 	h2 := common.HexToHash("0x02")
@@ -292,7 +295,7 @@ func BenchmarkSearchSlot(b *testing.B) {
 		accStorage := make(map[common.Hash][]byte)
 		for i := 0; i < 5; i++ {
 			value := make([]byte, 32)
-			rand.Read(value)
+			crand.Read(value)
 			accStorage[randomHash()] = value
 			storage[accountKey] = accStorage
 		}
@@ -328,7 +331,7 @@ func BenchmarkFlatten(b *testing.B) {
 			accStorage := make(map[common.Hash][]byte)
 			for i := 0; i < 20; i++ {
 				value := make([]byte, 32)
-				rand.Read(value)
+				crand.Read(value)
 				accStorage[randomHash()] = value
 			}
 			storage[accountKey] = accStorage
@@ -377,7 +380,7 @@ func BenchmarkJournal(b *testing.B) {
 			accStorage := make(map[common.Hash][]byte)
 			for i := 0; i < 200; i++ {
 				value := make([]byte, 32)
-				rand.Read(value)
+				crand.Read(value)
 				accStorage[randomHash()] = value
 			}
 			storage[accountKey] = accStorage

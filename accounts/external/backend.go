@@ -17,6 +17,7 @@
 package external
 
 import (
+	"errors"
 	"fmt"
 	"math/big"
 	"sync"
@@ -98,11 +99,11 @@ func (api *ExternalSigner) Status() (string, error) {
 }
 
 func (api *ExternalSigner) Open(passphrase string) error {
-	return fmt.Errorf("operation not supported on external signers")
+	return errors.New("operation not supported on external signers")
 }
 
 func (api *ExternalSigner) Close() error {
-	return fmt.Errorf("operation not supported on external signers")
+	return errors.New("operation not supported on external signers")
 }
 
 func (api *ExternalSigner) Accounts() []accounts.Account {
@@ -145,7 +146,7 @@ func (api *ExternalSigner) Contains(account accounts.Account) bool {
 }
 
 func (api *ExternalSigner) Derive(path accounts.DerivationPath, pin bool) (accounts.Account, error) {
-	return accounts.Account{}, fmt.Errorf("operation not supported on external signers")
+	return accounts.Account{}, errors.New("operation not supported on external signers")
 }
 
 func (api *ExternalSigner) SelfDerive(bases []accounts.DerivationPath, chain ethereum.ChainStateReader) {
@@ -155,7 +156,7 @@ func (api *ExternalSigner) SelfDerive(bases []accounts.DerivationPath, chain eth
 // SignData signs keccak256(data). The mimetype parameter describes the type of data being signed
 func (api *ExternalSigner) SignData(account accounts.Account, mimeType string, data []byte) ([]byte, error) {
 	var res hexutil.Bytes
-	signAddress := common.NewMixedcaseAddress(account.Address)
+	var signAddress = common.NewMixedcaseAddress(account.Address)
 	if err := api.client.Call(&res, "account_signData",
 		mimeType,
 		&signAddress, // Need to use the pointer here, because of how MarshalJSON is defined
@@ -171,7 +172,7 @@ func (api *ExternalSigner) SignData(account accounts.Account, mimeType string, d
 
 func (api *ExternalSigner) SignText(account accounts.Account, text []byte) ([]byte, error) {
 	var signature hexutil.Bytes
-	signAddress := common.NewMixedcaseAddress(account.Address)
+	var signAddress = common.NewMixedcaseAddress(account.Address)
 	if err := api.client.Call(&signature, "account_signData",
 		accounts.MimetypeTextPlain,
 		&signAddress, // Need to use the pointer here, because of how MarshalJSON is defined
@@ -242,15 +243,14 @@ func (api *ExternalSigner) SignTx(account accounts.Account, tx *types.Transactio
 }
 
 func (api *ExternalSigner) SignTextWithPassphrase(account accounts.Account, passphrase string, text []byte) ([]byte, error) {
-	return []byte{}, fmt.Errorf("password-operations not supported on external signers")
+	return []byte{}, errors.New("password-operations not supported on external signers")
 }
 
 func (api *ExternalSigner) SignTxWithPassphrase(account accounts.Account, passphrase string, tx *types.Transaction, chainID *big.Int) (*types.Transaction, error) {
-	return nil, fmt.Errorf("password-operations not supported on external signers")
+	return nil, errors.New("password-operations not supported on external signers")
 }
-
 func (api *ExternalSigner) SignDataWithPassphrase(account accounts.Account, passphrase, mimeType string, data []byte) ([]byte, error) {
-	return nil, fmt.Errorf("password-operations not supported on external signers")
+	return nil, errors.New("password-operations not supported on external signers")
 }
 
 func (api *ExternalSigner) listAccounts() ([]common.Address, error) {

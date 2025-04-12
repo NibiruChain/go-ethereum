@@ -8,10 +8,8 @@ import (
 	"net/http"
 )
 
-const (
-	Operations      = "operations"
-	OperationsShort = "ops"
-)
+const Operations = "operations"
+const OperationsShort = "ops"
 
 type LibratoClient struct {
 	Email, Token string
@@ -57,10 +55,8 @@ const (
 	MetricsPostUrl = "https://metrics-api.librato.com/v1/metrics"
 )
 
-type (
-	Measurement map[string]interface{}
-	Metric      map[string]interface{}
-)
+type Measurement map[string]interface{}
+type Metric map[string]interface{}
 
 type Batch struct {
 	Gauges      []Measurement `json:"gauges,omitempty"`
@@ -84,16 +80,18 @@ func (c *LibratoClient) PostMetrics(batch Batch) (err error) {
 		return
 	}
 
-	if req, err = http.NewRequest("POST", MetricsPostUrl, bytes.NewBuffer(js)); err != nil {
+	if req, err = http.NewRequest(http.MethodPost, MetricsPostUrl, bytes.NewBuffer(js)); err != nil {
 		return
 	}
 
 	req.Header.Set("Content-Type", "application/json")
 	req.SetBasicAuth(c.Email, c.Token)
 
-	if resp, err = http.DefaultClient.Do(req); err != nil {
+	resp, err = http.DefaultClient.Do(req)
+	if err != nil {
 		return
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		var body []byte

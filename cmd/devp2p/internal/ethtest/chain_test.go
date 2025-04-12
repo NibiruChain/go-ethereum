@@ -30,7 +30,8 @@ import (
 // TestEthProtocolNegotiation tests whether the test suite
 // can negotiate the highest eth protocol in a status message exchange
 func TestEthProtocolNegotiation(t *testing.T) {
-	tests := []struct {
+	t.Parallel()
+	var tests = []struct {
 		conn     *Conn
 		caps     []p2p.Cap
 		expected uint32
@@ -122,30 +123,27 @@ func TestEthProtocolNegotiation(t *testing.T) {
 	}
 }
 
-// TestChain_GetHeaders tests whether the test suite can correctly
+// TestChainGetHeaders tests whether the test suite can correctly
 // respond to a GetBlockHeaders request from a node.
-func TestChain_GetHeaders(t *testing.T) {
-	chainFile, err := filepath.Abs("./testdata/chain.rlp")
+func TestChainGetHeaders(t *testing.T) {
+	t.Parallel()
+
+	dir, err := filepath.Abs("./testdata")
 	if err != nil {
 		t.Fatal(err)
 	}
-	genesisFile, err := filepath.Abs("./testdata/genesis.json")
+	chain, err := NewChain(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	chain, err := loadChain(chainFile, genesisFile)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	tests := []struct {
-		req      GetBlockHeaders
+	var tests = []struct {
+		req      eth.GetBlockHeadersPacket
 		expected []*types.Header
 	}{
 		{
-			req: GetBlockHeaders{
-				GetBlockHeadersPacket: &eth.GetBlockHeadersPacket{
+			req: eth.GetBlockHeadersPacket{
+				GetBlockHeadersRequest: &eth.GetBlockHeadersRequest{
 					Origin:  eth.HashOrNumber{Number: uint64(2)},
 					Amount:  uint64(5),
 					Skip:    1,
@@ -161,8 +159,8 @@ func TestChain_GetHeaders(t *testing.T) {
 			},
 		},
 		{
-			req: GetBlockHeaders{
-				GetBlockHeadersPacket: &eth.GetBlockHeadersPacket{
+			req: eth.GetBlockHeadersPacket{
+				GetBlockHeadersRequest: &eth.GetBlockHeadersRequest{
 					Origin:  eth.HashOrNumber{Number: uint64(chain.Len() - 1)},
 					Amount:  uint64(3),
 					Skip:    0,
@@ -176,8 +174,8 @@ func TestChain_GetHeaders(t *testing.T) {
 			},
 		},
 		{
-			req: GetBlockHeaders{
-				GetBlockHeadersPacket: &eth.GetBlockHeadersPacket{
+			req: eth.GetBlockHeadersPacket{
+				GetBlockHeadersRequest: &eth.GetBlockHeadersRequest{
 					Origin:  eth.HashOrNumber{Hash: chain.Head().Hash()},
 					Amount:  uint64(1),
 					Skip:    0,

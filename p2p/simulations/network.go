@@ -646,8 +646,8 @@ func (net *Network) getConn(oneID, otherID enode.ID) *Conn {
 	return net.Conns[i]
 }
 
-// InitConn(one, other) retrieves the connection model for the connection between
-// peers one and other, or creates a new one if it does not exist
+// InitConn retrieves the connection model for the connection between
+// peers 'oneID' and 'otherID', or creates a new one if it does not exist
 // the order of nodes does not matter, i.e., Conn(i,j) == Conn(j, i)
 // it checks if the connection is already up, and if the nodes are running
 // NOTE:
@@ -702,7 +702,7 @@ func (net *Network) Reset() {
 	net.lock.Lock()
 	defer net.lock.Unlock()
 
-	// re-initialize the maps
+	//re-initialize the maps
 	net.connMap = make(map[string]int)
 	net.nodeMap = make(map[enode.ID]int)
 	net.propertyMap = make(map[string][]int)
@@ -1019,8 +1019,8 @@ func (net *Network) Load(snap *Snapshot) error {
 	// Start connecting.
 	for _, conn := range snap.Conns {
 		if !net.GetNode(conn.One).Up() || !net.GetNode(conn.Other).Up() {
-			// in this case, at least one of the nodes of a connection is not up,
-			// so it would result in the snapshot `Load` to fail
+			//in this case, at least one of the nodes of a connection is not up,
+			//so it would result in the snapshot `Load` to fail
 			continue
 		}
 		if err := net.Connect(conn.One, conn.Other); err != nil {
