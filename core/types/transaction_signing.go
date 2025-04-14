@@ -36,7 +36,21 @@ type sigCache struct {
 	from   common.Address
 }
 
-// MakeSigner returns a Signer based on the given chain config and block number.
+// MakeSigner returns a [Signer] based on the given chain config and block
+// number.
+//
+// Parameters:
+//   - config: The chain configuration (`ChainConfig`) that defines fork rules
+//     and protocol upgrades.
+//   - blockNumber: The current block number (used to determine fork activation
+//     based on block height).
+//   - blockTime: The current block timestamp, expressed as a Unix timestamp in
+//     seconds (used to determine activation of time-based forks such as Shanghai
+//     or Cancun).
+//
+// Returns:
+//   - [Signer] that encapsulates the transaction rules and
+//     signature format applicable at the given point in the chain's history.
 func MakeSigner(config *params.ChainConfig, blockNumber *big.Int, blockTime uint64) Signer {
 	var signer Signer
 	switch {

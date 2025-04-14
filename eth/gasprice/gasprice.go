@@ -19,6 +19,7 @@ package gasprice
 import (
 	"context"
 	"math/big"
+	"sort"
 	"sync"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -29,7 +30,6 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rpc"
-	"golang.org/x/exp/slices"
 )
 
 const sampleNumber = 3 // Number of transactions sampled in a block
@@ -208,7 +208,9 @@ func (oracle *Oracle) SuggestTipCap(ctx context.Context) (*big.Int, error) {
 	}
 	price := lastPrice
 	if len(results) > 0 {
-		slices.SortFunc(results, func(a, b *big.Int) int { return a.Cmp(b) })
+		sort.Slice(results, func(i, j int) bool {
+			return results[i].Cmp(results[j]) < 0
+		})
 		price = results[(len(results)-1)*oracle.percentile/100]
 	}
 	if price.Cmp(oracle.maxPrice) > 0 {
@@ -247,12 +249,12 @@ func (oracle *Oracle) getBlockValues(ctx context.Context, blockNum uint64, limit
 	sortedTxs := make([]*types.Transaction, len(txs))
 	copy(sortedTxs, txs)
 	baseFee := block.BaseFee()
-	slices.SortFunc(sortedTxs, func(a, b *types.Transaction) int {
+	sort.Slice(sortedTxs, func(i, j int) bool {
 		// It's okay to discard the error because a tx would never be
 		// accepted into a block with an invalid effective tip.
-		tip1, _ := a.EffectiveGasTip(baseFee)
-		tip2, _ := b.EffectiveGasTip(baseFee)
-		return tip1.Cmp(tip2)
+		tip1, _ := sortedTxs[i].EffectiveGasTip(baseFee)
+		tip2, _ := sortedTxs[j].EffectiveGasTip(baseFee)
+		return tip1.Cmp(tip2) < 0
 	})
 
 	var prices []*big.Int

@@ -22,7 +22,6 @@ import (
 	"sort"
 
 	"github.com/ethereum/go-ethereum/common"
-	"golang.org/x/exp/slices"
 )
 
 // weightedIterator is a iterator with an assigned weight. It is used to prioritise
@@ -161,7 +160,10 @@ func (fi *fastIterator) init() {
 		}
 	}
 	// Re-sort the entire list
-	slices.SortFunc(fi.iterators, func(a, b *weightedIterator) int { return a.Cmp(b) })
+	sort.Slice(fi.iterators, func(i, j int) bool {
+		return fi.iterators[i].Cmp(fi.iterators[j]) < 0
+	})
+
 	fi.initiated = false
 }
 

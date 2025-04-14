@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -32,7 +33,6 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/p2p/dnsdisc"
 	"github.com/urfave/cli/v2"
-	"golang.org/x/exp/slices"
 )
 
 const (
@@ -288,7 +288,8 @@ func makeDeletionChanges(records map[string]recordSet, keep map[string]string) [
 // sortChanges ensures DNS changes are in leaf-added -> root-changed -> leaf-deleted order.
 func sortChanges(changes []types.Change) {
 	score := map[string]int{"CREATE": 1, "UPSERT": 2, "DELETE": 3}
-	slices.SortFunc(changes, func(a, b types.Change) int {
+
+	cmpChange := func(a, b types.Change) int {
 		if a.Action == b.Action {
 			return strings.Compare(*a.ResourceRecordSet.Name, *b.ResourceRecordSet.Name)
 		}
@@ -299,6 +300,9 @@ func sortChanges(changes []types.Change) {
 			return 1
 		}
 		return 0
+	}
+	sort.Slice(changes, func(i, j int) bool {
+		return cmpChange(changes[i], changes[j]) < 0
 	})
 }
 

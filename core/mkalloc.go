@@ -35,7 +35,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/rlp"
-	"golang.org/x/exp/slices"
 )
 
 type allocItem struct {
@@ -68,15 +67,16 @@ func makelist(g *core.Genesis) []allocItem {
 			for key, val := range account.Storage {
 				misc.Slots = append(misc.Slots, allocItemStorageItem{key, val})
 			}
-			slices.SortFunc(misc.Slots, func(a, b allocItemStorageItem) int {
-				return a.Key.Cmp(b.Key)
+			sort.Slice(misc.Slots, func(i, j int) bool {
+				return misc.Slots[i].Key.Cmp(misc.Slots[j].Key) < 0
 			})
 		}
 		bigAddr := new(big.Int).SetBytes(addr.Bytes())
 		items = append(items, allocItem{bigAddr, account.Balance, misc})
 	}
-	slices.SortFunc(items, func(a, b allocItem) int {
-		return a.Addr.Cmp(b.Addr)
+
+	sort.Slice(items, func(i, j int) bool {
+		return items[i].Addr.Cmp(items[j].Addr) < 0
 	})
 	return items
 }

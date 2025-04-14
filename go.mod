@@ -1,5 +1,9 @@
 module github.com/ethereum/go-ethereum
 
+// NOTE: This project will not work with Go versions > 22.
+// And, if you change this go directive to "go 1.21", the build will break
+// because of breaking changes that happened with sorting functions in the std
+// library.
 go 1.20
 
 require (

@@ -19,7 +19,7 @@ package snap
 import (
 	"bytes"
 	"math/rand"
-	"slices"
+	"sort"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -178,7 +178,9 @@ func TestPartialGentree(t *testing.T) {
 				v: val,
 			})
 		}
-		slices.SortFunc(entries, (*kv).cmp)
+		sort.Slice(entries, func(i, j int) bool {
+			return entries[i].cmp(entries[j]) < 0
+		})
 
 		nodes := make(map[string]common.Hash)
 		tr := trie.NewStackTrie(func(path []byte, hash common.Hash, blob []byte) {
@@ -270,7 +272,9 @@ func TestGentreeDanglingClearing(t *testing.T) {
 				v: val,
 			})
 		}
-		slices.SortFunc(entries, (*kv).cmp)
+		sort.Slice(entries, func(i, j int) bool {
+			return entries[i].cmp(entries[j]) < 0
+		})
 
 		nodes := make(map[string]common.Hash)
 		tr := trie.NewStackTrie(func(path []byte, hash common.Hash, blob []byte) {
@@ -375,7 +379,9 @@ func TestFlushPartialTree(t *testing.T) {
 			v: val,
 		})
 	}
-	slices.SortFunc(entries, (*kv).cmp)
+	sort.Slice(entries, func(i, j int) bool {
+		return entries[i].cmp(entries[j]) < 0
+	})
 
 	nodes := make(map[string]common.Hash)
 	tr := trie.NewStackTrie(func(path []byte, hash common.Hash, blob []byte) {
@@ -459,7 +465,9 @@ func TestBoundSplit(t *testing.T) {
 			v: val,
 		})
 	}
-	slices.SortFunc(entries, (*kv).cmp)
+	sort.Slice(entries, func(i, j int) bool {
+		return entries[i].cmp(entries[j]) < 0
+	})
 
 	for j := 0; j < 100; j++ {
 		var (
@@ -533,7 +541,9 @@ func TestTinyPartialTree(t *testing.T) {
 			v: val,
 		})
 	}
-	slices.SortFunc(entries, (*kv).cmp)
+	sort.Slice(entries, func(i, j int) bool {
+		return entries[i].cmp(entries[j]) < 0
+	})
 
 	for i := 0; i < len(entries); i++ {
 		next := i

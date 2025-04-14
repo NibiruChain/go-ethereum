@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"sort"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -28,7 +29,6 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/trie/trienode"
 	"golang.org/x/crypto/sha3"
-	"golang.org/x/exp/slices"
 )
 
 func FuzzStackTrie(f *testing.F) {
@@ -91,7 +91,9 @@ func fuzz(data []byte, debugging bool) {
 	dbA.Commit(rootA)
 
 	// Stacktrie requires sorted insertion
-	slices.SortFunc(vals, (*kv).cmp)
+	sort.Slice(vals, func(i, j int) bool {
+		return vals[i].cmp(vals[j]) < 0
+	})
 
 	for _, kv := range vals {
 		if debugging {
