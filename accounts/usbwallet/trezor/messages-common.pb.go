@@ -11,11 +11,9 @@ import (
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
-var (
-	_ = proto.Marshal
-	_ = fmt.Errorf
-	_ = math.Inf
-)
+var _ = proto.Marshal
+var _ = fmt.Errorf
+var _ = math.Inf
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the proto package it is being compiled against.
@@ -96,7 +94,7 @@ func (Failure_FailureType) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_aaf30d059fdbc38d, []int{1, 0}
 }
 
-//*
+// *
 // Type of button request
 type ButtonRequest_ButtonRequestType int32
 
@@ -177,7 +175,7 @@ func (ButtonRequest_ButtonRequestType) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_aaf30d059fdbc38d, []int{2, 0}
 }
 
-//*
+// *
 // Type of PIN request
 type PinMatrixRequest_PinMatrixRequestType int32
 
@@ -222,7 +220,7 @@ func (PinMatrixRequest_PinMatrixRequestType) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_aaf30d059fdbc38d, []int{4, 0}
 }
 
-//*
+// *
 // Response: Success of the previous request
 // @end
 type Success struct {
@@ -242,19 +240,15 @@ func (*Success) Descriptor() ([]byte, []int) {
 func (m *Success) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Success.Unmarshal(m, b)
 }
-
 func (m *Success) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Success.Marshal(b, m, deterministic)
 }
-
 func (m *Success) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_Success.Merge(m, src)
 }
-
 func (m *Success) XXX_Size() int {
 	return xxx_messageInfo_Success.Size(m)
 }
-
 func (m *Success) XXX_DiscardUnknown() {
 	xxx_messageInfo_Success.DiscardUnknown(m)
 }
@@ -268,7 +262,7 @@ func (m *Success) GetMessage() string {
 	return ""
 }
 
-//*
+// *
 // Response: Failure of the previous request
 // @end
 type Failure struct {
@@ -289,19 +283,15 @@ func (*Failure) Descriptor() ([]byte, []int) {
 func (m *Failure) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Failure.Unmarshal(m, b)
 }
-
 func (m *Failure) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Failure.Marshal(b, m, deterministic)
 }
-
 func (m *Failure) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_Failure.Merge(m, src)
 }
-
 func (m *Failure) XXX_Size() int {
 	return xxx_messageInfo_Failure.Size(m)
 }
-
 func (m *Failure) XXX_DiscardUnknown() {
 	xxx_messageInfo_Failure.DiscardUnknown(m)
 }
@@ -322,7 +312,7 @@ func (m *Failure) GetMessage() string {
 	return ""
 }
 
-//*
+// *
 // Response: Device is waiting for HW button press.
 // @auxstart
 // @next ButtonAck
@@ -344,19 +334,15 @@ func (*ButtonRequest) Descriptor() ([]byte, []int) {
 func (m *ButtonRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ButtonRequest.Unmarshal(m, b)
 }
-
 func (m *ButtonRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ButtonRequest.Marshal(b, m, deterministic)
 }
-
 func (m *ButtonRequest) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_ButtonRequest.Merge(m, src)
 }
-
 func (m *ButtonRequest) XXX_Size() int {
 	return xxx_messageInfo_ButtonRequest.Size(m)
 }
-
 func (m *ButtonRequest) XXX_DiscardUnknown() {
 	xxx_messageInfo_ButtonRequest.DiscardUnknown(m)
 }
@@ -377,7 +363,7 @@ func (m *ButtonRequest) GetData() string {
 	return ""
 }
 
-//*
+// *
 // Request: Computer agrees to wait for HW button press
 // @auxend
 type ButtonAck struct {
@@ -396,26 +382,22 @@ func (*ButtonAck) Descriptor() ([]byte, []int) {
 func (m *ButtonAck) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ButtonAck.Unmarshal(m, b)
 }
-
 func (m *ButtonAck) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ButtonAck.Marshal(b, m, deterministic)
 }
-
 func (m *ButtonAck) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_ButtonAck.Merge(m, src)
 }
-
 func (m *ButtonAck) XXX_Size() int {
 	return xxx_messageInfo_ButtonAck.Size(m)
 }
-
 func (m *ButtonAck) XXX_DiscardUnknown() {
 	xxx_messageInfo_ButtonAck.DiscardUnknown(m)
 }
 
 var xxx_messageInfo_ButtonAck proto.InternalMessageInfo
 
-//*
+// *
 // Response: Device is asking computer to show PIN matrix and awaits PIN encoded using this matrix scheme
 // @auxstart
 // @next PinMatrixAck
@@ -436,19 +418,15 @@ func (*PinMatrixRequest) Descriptor() ([]byte, []int) {
 func (m *PinMatrixRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_PinMatrixRequest.Unmarshal(m, b)
 }
-
 func (m *PinMatrixRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_PinMatrixRequest.Marshal(b, m, deterministic)
 }
-
 func (m *PinMatrixRequest) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_PinMatrixRequest.Merge(m, src)
 }
-
 func (m *PinMatrixRequest) XXX_Size() int {
 	return xxx_messageInfo_PinMatrixRequest.Size(m)
 }
-
 func (m *PinMatrixRequest) XXX_DiscardUnknown() {
 	xxx_messageInfo_PinMatrixRequest.DiscardUnknown(m)
 }
@@ -462,7 +440,7 @@ func (m *PinMatrixRequest) GetType() PinMatrixRequest_PinMatrixRequestType {
 	return PinMatrixRequest_PinMatrixRequestType_Current
 }
 
-//*
+// *
 // Request: Computer responds with encoded PIN
 // @auxend
 type PinMatrixAck struct {
@@ -482,19 +460,15 @@ func (*PinMatrixAck) Descriptor() ([]byte, []int) {
 func (m *PinMatrixAck) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_PinMatrixAck.Unmarshal(m, b)
 }
-
 func (m *PinMatrixAck) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_PinMatrixAck.Marshal(b, m, deterministic)
 }
-
 func (m *PinMatrixAck) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_PinMatrixAck.Merge(m, src)
 }
-
 func (m *PinMatrixAck) XXX_Size() int {
 	return xxx_messageInfo_PinMatrixAck.Size(m)
 }
-
 func (m *PinMatrixAck) XXX_DiscardUnknown() {
 	xxx_messageInfo_PinMatrixAck.DiscardUnknown(m)
 }
@@ -508,7 +482,7 @@ func (m *PinMatrixAck) GetPin() string {
 	return ""
 }
 
-//*
+// *
 // Response: Device awaits encryption passphrase
 // @auxstart
 // @next PassphraseAck
@@ -529,19 +503,15 @@ func (*PassphraseRequest) Descriptor() ([]byte, []int) {
 func (m *PassphraseRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_PassphraseRequest.Unmarshal(m, b)
 }
-
 func (m *PassphraseRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_PassphraseRequest.Marshal(b, m, deterministic)
 }
-
 func (m *PassphraseRequest) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_PassphraseRequest.Merge(m, src)
 }
-
 func (m *PassphraseRequest) XXX_Size() int {
 	return xxx_messageInfo_PassphraseRequest.Size(m)
 }
-
 func (m *PassphraseRequest) XXX_DiscardUnknown() {
 	xxx_messageInfo_PassphraseRequest.DiscardUnknown(m)
 }
@@ -555,7 +525,7 @@ func (m *PassphraseRequest) GetOnDevice() bool {
 	return false
 }
 
-//*
+// *
 // Request: Send passphrase back
 // @next PassphraseStateRequest
 type PassphraseAck struct {
@@ -576,19 +546,15 @@ func (*PassphraseAck) Descriptor() ([]byte, []int) {
 func (m *PassphraseAck) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_PassphraseAck.Unmarshal(m, b)
 }
-
 func (m *PassphraseAck) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_PassphraseAck.Marshal(b, m, deterministic)
 }
-
 func (m *PassphraseAck) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_PassphraseAck.Merge(m, src)
 }
-
 func (m *PassphraseAck) XXX_Size() int {
 	return xxx_messageInfo_PassphraseAck.Size(m)
 }
-
 func (m *PassphraseAck) XXX_DiscardUnknown() {
 	xxx_messageInfo_PassphraseAck.DiscardUnknown(m)
 }
@@ -609,7 +575,7 @@ func (m *PassphraseAck) GetState() []byte {
 	return nil
 }
 
-//*
+// *
 // Response: Device awaits passphrase state
 // @next PassphraseStateAck
 type PassphraseStateRequest struct {
@@ -629,19 +595,15 @@ func (*PassphraseStateRequest) Descriptor() ([]byte, []int) {
 func (m *PassphraseStateRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_PassphraseStateRequest.Unmarshal(m, b)
 }
-
 func (m *PassphraseStateRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_PassphraseStateRequest.Marshal(b, m, deterministic)
 }
-
 func (m *PassphraseStateRequest) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_PassphraseStateRequest.Merge(m, src)
 }
-
 func (m *PassphraseStateRequest) XXX_Size() int {
 	return xxx_messageInfo_PassphraseStateRequest.Size(m)
 }
-
 func (m *PassphraseStateRequest) XXX_DiscardUnknown() {
 	xxx_messageInfo_PassphraseStateRequest.DiscardUnknown(m)
 }
@@ -655,7 +617,7 @@ func (m *PassphraseStateRequest) GetState() []byte {
 	return nil
 }
 
-//*
+// *
 // Request: Send passphrase state back
 // @auxend
 type PassphraseStateAck struct {
@@ -674,26 +636,22 @@ func (*PassphraseStateAck) Descriptor() ([]byte, []int) {
 func (m *PassphraseStateAck) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_PassphraseStateAck.Unmarshal(m, b)
 }
-
 func (m *PassphraseStateAck) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_PassphraseStateAck.Marshal(b, m, deterministic)
 }
-
 func (m *PassphraseStateAck) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_PassphraseStateAck.Merge(m, src)
 }
-
 func (m *PassphraseStateAck) XXX_Size() int {
 	return xxx_messageInfo_PassphraseStateAck.Size(m)
 }
-
 func (m *PassphraseStateAck) XXX_DiscardUnknown() {
 	xxx_messageInfo_PassphraseStateAck.DiscardUnknown(m)
 }
 
 var xxx_messageInfo_PassphraseStateAck proto.InternalMessageInfo
 
-//*
+// *
 // Structure representing BIP32 (hierarchical deterministic) node
 // Used for imports of private key into the device and exporting public key out of device
 // @embed
@@ -719,19 +677,15 @@ func (*HDNodeType) Descriptor() ([]byte, []int) {
 func (m *HDNodeType) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_HDNodeType.Unmarshal(m, b)
 }
-
 func (m *HDNodeType) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_HDNodeType.Marshal(b, m, deterministic)
 }
-
 func (m *HDNodeType) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_HDNodeType.Merge(m, src)
 }
-
 func (m *HDNodeType) XXX_Size() int {
 	return xxx_messageInfo_HDNodeType.Size(m)
 }
-
 func (m *HDNodeType) XXX_DiscardUnknown() {
 	xxx_messageInfo_HDNodeType.DiscardUnknown(m)
 }

@@ -25,6 +25,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestBytesConversion(t *testing.T) {
@@ -64,7 +65,7 @@ func TestIsHexAddress(t *testing.T) {
 }
 
 func TestHashJsonValidation(t *testing.T) {
-	tests := []struct {
+	var tests = []struct {
 		Prefix string
 		Size   int
 		Error  string
@@ -93,7 +94,7 @@ func TestHashJsonValidation(t *testing.T) {
 }
 
 func TestAddressUnmarshalJSON(t *testing.T) {
-	tests := []struct {
+	var tests = []struct {
 		Input     string
 		ShouldErr bool
 		Output    *big.Int
@@ -124,7 +125,7 @@ func TestAddressUnmarshalJSON(t *testing.T) {
 }
 
 func TestAddressHexChecksum(t *testing.T) {
-	tests := []struct {
+	var tests = []struct {
 		Input  string
 		Output string
 	}{
@@ -151,6 +152,31 @@ func BenchmarkAddressHex(b *testing.B) {
 	testAddr := HexToAddress("0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed")
 	for n := 0; n < b.N; n++ {
 		testAddr.Hex()
+	}
+}
+
+// Test checks if the customized json marshaller of MixedcaseAddress object
+// is invoked correctly. In golang the struct pointer will inherit the
+// non-pointer receiver methods, the reverse is not true. In the case of
+// MixedcaseAddress, it must define the MarshalJSON method in the object
+// but not the pointer level, so that this customized marshalled can be used
+// for both MixedcaseAddress object and pointer.
+func TestMixedcaseAddressMarshal(t *testing.T) {
+	var (
+		output string
+		input  = "0xae967917c465db8578ca9024c205720b1a3651A9"
+	)
+	addr, err := NewMixedcaseAddressFromString(input)
+	if err != nil {
+		t.Fatal(err)
+	}
+	blob, err := json.Marshal(*addr)
+	if err != nil {
+		t.Fatal(err)
+	}
+	json.Unmarshal(blob, &output)
+	if output != input {
+		t.Fatal("Failed to marshal/unmarshal MixedcaseAddress object")
 	}
 }
 
@@ -186,7 +212,7 @@ func TestMixedcaseAccount_Address(t *testing.T) {
 		`["0x111111111111111111111222222222222333332344"]`, // Too long
 		`["1111111111111111111112222222222223333323"]`,     // Missing 0x
 		`["x1111111111111111111112222222222223333323"]`,    // Missing 0
-		`["0xG111111111111111111112222222222223333323"]`,   // Non-hex
+		`["0xG111111111111111111112222222222223333323"]`,   //Non-hex
 	} {
 		if err := json.Unmarshal([]byte(r), &r2); err == nil {
 			t.Errorf("Expected failure, input %v", r)
@@ -533,4 +559,39 @@ func TestHash_Format(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestAddressEIP55(t *testing.T) {
+	addr := HexToAddress("0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed")
+	addrEIP55 := AddressEIP55(addr)
+
+	if addr.Hex() != addrEIP55.String() {
+		t.Fatal("AddressEIP55 should match original address hex")
+	}
+
+	blob, err := addrEIP55.MarshalJSON()
+	if err != nil {
+		t.Fatal("Failed to marshal AddressEIP55", err)
+	}
+	if strings.Trim(string(blob), "\"") != addr.Hex() {
+		t.Fatal("Address with checksum is expected")
+	}
+	var dec Address
+	if err := json.Unmarshal(blob, &dec); err != nil {
+		t.Fatal("Failed to unmarshal AddressEIP55", err)
+	}
+	if addr != dec {
+		t.Fatal("Unexpected address after unmarshal")
+	}
+}
+
+func BenchmarkPrettyDuration(b *testing.B) {
+	var x = PrettyDuration(time.Duration(int64(1203123912312)))
+	b.Logf("Pre %s", time.Duration(x).String())
+	var a string
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		a = x.String()
+	}
+	b.Logf("Post %s", a)
 }

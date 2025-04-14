@@ -33,7 +33,6 @@ import (
 	"github.com/ethereum/go-ethereum/console/prompt"
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/state/snapshot"
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/ethereum/go-ethereum/internal/flags"
@@ -44,12 +43,22 @@ import (
 )
 
 var (
+	removeStateDataFlag = &cli.BoolFlag{
+		Name:  "remove.state",
+		Usage: "If set, selects the state data for removal",
+	}
+	removeChainDataFlag = &cli.BoolFlag{
+		Name:  "remove.chain",
+		Usage: "If set, selects the state data for removal",
+	}
+
 	removedbCommand = &cli.Command{
 		Action:    removeDB,
 		Name:      "removedb",
 		Usage:     "Remove blockchain and state databases",
 		ArgsUsage: "",
-		Flags:     utils.DatabasePathFlags,
+		Flags: flags.Merge(utils.DatabaseFlags,
+			[]cli.Flag{removeStateDataFlag, removeChainDataFlag}),
 		Description: `
 Remove blockchain and state databases`,
 	}
@@ -69,7 +78,6 @@ Remove blockchain and state databases`,
 			dbImportCmd,
 			dbExportCmd,
 			dbMetadataCmd,
-			dbMigrateFreezerCmd,
 			dbCheckStateContentCmd,
 		},
 	}
@@ -79,7 +87,7 @@ Remove blockchain and state databases`,
 		ArgsUsage: "<prefix> <start>",
 		Flags: flags.Merge([]cli.Flag{
 			utils.SyncModeFlag,
-		}, utils.NetworkFlags, utils.DatabasePathFlags),
+		}, utils.NetworkFlags, utils.DatabaseFlags),
 		Usage:       "Inspect the storage size for each type of data in the database",
 		Description: `This commands iterates the entire database. If the optional 'prefix' and 'start' arguments are provided, then the iteration is limited to the given subset of data.`,
 	}
@@ -87,7 +95,7 @@ Remove blockchain and state databases`,
 		Action:    checkStateContent,
 		Name:      "check-state-content",
 		ArgsUsage: "<start (optional)>",
-		Flags:     flags.Merge(utils.NetworkFlags, utils.DatabasePathFlags),
+		Flags:     flags.Merge(utils.NetworkFlags, utils.DatabaseFlags),
 		Usage:     "Verify that state data is cryptographically correct",
 		Description: `This command iterates the entire database for 32-byte keys, looking for rlp-encoded trie nodes.
 For each trie node encountered, it checks that the key corresponds to the keccak256(value). If this is not true, this indicates
@@ -99,7 +107,7 @@ a data corruption.`,
 		Usage:  "Print leveldb statistics",
 		Flags: flags.Merge([]cli.Flag{
 			utils.SyncModeFlag,
-		}, utils.NetworkFlags, utils.DatabasePathFlags),
+		}, utils.NetworkFlags, utils.DatabaseFlags),
 	}
 	dbCompactCmd = &cli.Command{
 		Action: dbCompact,
@@ -109,8 +117,8 @@ a data corruption.`,
 			utils.SyncModeFlag,
 			utils.CacheFlag,
 			utils.CacheDatabaseFlag,
-		}, utils.NetworkFlags, utils.DatabasePathFlags),
-		Description: `This command performs a database compaction. 
+		}, utils.NetworkFlags, utils.DatabaseFlags),
+		Description: `This command performs a database compaction.
 WARNING: This operation may take a very long time to finish, and may cause database
 corruption if it is aborted during execution'!`,
 	}
@@ -121,7 +129,7 @@ corruption if it is aborted during execution'!`,
 		ArgsUsage: "<hex-encoded key>",
 		Flags: flags.Merge([]cli.Flag{
 			utils.SyncModeFlag,
-		}, utils.NetworkFlags, utils.DatabasePathFlags),
+		}, utils.NetworkFlags, utils.DatabaseFlags),
 		Description: "This command looks up the specified database key from the database.",
 	}
 	dbDeleteCmd = &cli.Command{
@@ -131,8 +139,8 @@ corruption if it is aborted during execution'!`,
 		ArgsUsage: "<hex-encoded key>",
 		Flags: flags.Merge([]cli.Flag{
 			utils.SyncModeFlag,
-		}, utils.NetworkFlags, utils.DatabasePathFlags),
-		Description: `This command deletes the specified database key from the database. 
+		}, utils.NetworkFlags, utils.DatabaseFlags),
+		Description: `This command deletes the specified database key from the database.
 WARNING: This is a low-level operation which may cause database corruption!`,
 	}
 	dbPutCmd = &cli.Command{
@@ -142,18 +150,18 @@ WARNING: This is a low-level operation which may cause database corruption!`,
 		ArgsUsage: "<hex-encoded key> <hex-encoded value>",
 		Flags: flags.Merge([]cli.Flag{
 			utils.SyncModeFlag,
-		}, utils.NetworkFlags, utils.DatabasePathFlags),
-		Description: `This command sets a given database key to the given value. 
+		}, utils.NetworkFlags, utils.DatabaseFlags),
+		Description: `This command sets a given database key to the given value.
 WARNING: This is a low-level operation which may cause database corruption!`,
 	}
 	dbGetSlotsCmd = &cli.Command{
 		Action:    dbDumpTrie,
 		Name:      "dumptrie",
 		Usage:     "Show the storage key/values of a given storage trie",
-		ArgsUsage: "<hex-encoded storage trie root> <hex-encoded start (optional)> <int max elements (optional)>",
+		ArgsUsage: "<hex-encoded state root> <hex-encoded account hash> <hex-encoded storage trie root> <hex-encoded start (optional)> <int max elements (optional)>",
 		Flags: flags.Merge([]cli.Flag{
 			utils.SyncModeFlag,
-		}, utils.NetworkFlags, utils.DatabasePathFlags),
+		}, utils.NetworkFlags, utils.DatabaseFlags),
 		Description: "This command looks up the specified database key from the database.",
 	}
 	dbDumpFreezerIndex = &cli.Command{
@@ -163,7 +171,7 @@ WARNING: This is a low-level operation which may cause database corruption!`,
 		ArgsUsage: "<freezer-type> <table-type> <start (int)> <end (int)>",
 		Flags: flags.Merge([]cli.Flag{
 			utils.SyncModeFlag,
-		}, utils.NetworkFlags, utils.DatabasePathFlags),
+		}, utils.NetworkFlags, utils.DatabaseFlags),
 		Description: "This command displays information about the freezer index.",
 	}
 	dbImportCmd = &cli.Command{
@@ -173,7 +181,7 @@ WARNING: This is a low-level operation which may cause database corruption!`,
 		ArgsUsage: "<dumpfile> <start (optional)",
 		Flags: flags.Merge([]cli.Flag{
 			utils.SyncModeFlag,
-		}, utils.NetworkFlags, utils.DatabasePathFlags),
+		}, utils.NetworkFlags, utils.DatabaseFlags),
 		Description: "The import command imports the specific chain data from an RLP encoded stream.",
 	}
 	dbExportCmd = &cli.Command{
@@ -183,7 +191,7 @@ WARNING: This is a low-level operation which may cause database corruption!`,
 		ArgsUsage: "<type> <dumpfile>",
 		Flags: flags.Merge([]cli.Flag{
 			utils.SyncModeFlag,
-		}, utils.NetworkFlags, utils.DatabasePathFlags),
+		}, utils.NetworkFlags, utils.DatabaseFlags),
 		Description: "Exports the specified chain data to an RLP encoded stream, optionally gzip-compressed.",
 	}
 	dbMetadataCmd = &cli.Command{
@@ -192,79 +200,93 @@ WARNING: This is a low-level operation which may cause database corruption!`,
 		Usage:  "Shows metadata about the chain status.",
 		Flags: flags.Merge([]cli.Flag{
 			utils.SyncModeFlag,
-		}, utils.NetworkFlags, utils.DatabasePathFlags),
+		}, utils.NetworkFlags, utils.DatabaseFlags),
 		Description: "Shows metadata about the chain status.",
-	}
-	dbMigrateFreezerCmd = &cli.Command{
-		Action:    freezerMigrate,
-		Name:      "freezer-migrate",
-		Usage:     "Migrate legacy parts of the freezer. (WARNING: may take a long time)",
-		ArgsUsage: "",
-		Flags: flags.Merge([]cli.Flag{
-			utils.SyncModeFlag,
-		}, utils.NetworkFlags, utils.DatabasePathFlags),
-		Description: `The freezer-migrate command checks your database for receipts in a legacy format and updates those.
-WARNING: please back-up the receipt files in your ancients before running this command.`,
 	}
 )
 
 func removeDB(ctx *cli.Context) error {
 	stack, config := makeConfigNode(ctx)
 
-	// Remove the full node state database
-	path := stack.ResolvePath("chaindata")
-	if common.FileExist(path) {
-		confirmAndRemoveDB(path, "full node state database")
-	} else {
-		log.Info("Full node state database missing", "path", path)
-	}
-	// Remove the full node ancient database
-	path = config.Eth.DatabaseFreezer
+	// Resolve folder paths.
+	var (
+		rootDir    = stack.ResolvePath("chaindata")
+		ancientDir = config.Eth.DatabaseFreezer
+	)
 	switch {
-	case path == "":
-		path = filepath.Join(stack.ResolvePath("chaindata"), "ancient")
-	case !filepath.IsAbs(path):
-		path = config.Node.ResolvePath(path)
+	case ancientDir == "":
+		ancientDir = filepath.Join(stack.ResolvePath("chaindata"), "ancient")
+	case !filepath.IsAbs(ancientDir):
+		ancientDir = config.Node.ResolvePath(ancientDir)
 	}
-	if common.FileExist(path) {
-		confirmAndRemoveDB(path, "full node ancient database")
-	} else {
-		log.Info("Full node ancient database missing", "path", path)
-	}
-	// Remove the light node database
-	path = stack.ResolvePath("lightchaindata")
-	if common.FileExist(path) {
-		confirmAndRemoveDB(path, "light node database")
-	} else {
-		log.Info("Light node database missing", "path", path)
-	}
+	// Delete state data
+	statePaths := []string{rootDir, filepath.Join(ancientDir, rawdb.StateFreezerName)}
+	confirmAndRemoveDB(statePaths, "state data", ctx, removeStateDataFlag.Name)
+
+	// Delete ancient chain
+	chainPaths := []string{filepath.Join(ancientDir, rawdb.ChainFreezerName)}
+	confirmAndRemoveDB(chainPaths, "ancient chain", ctx, removeChainDataFlag.Name)
 	return nil
 }
 
+// removeFolder deletes all files (not folders) inside the directory 'dir' (but
+// not files in subfolders).
+func removeFolder(dir string) {
+	filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		// If we're at the top level folder, recurse into
+		if path == dir {
+			return nil
+		}
+		// Delete all the files, but not subfolders
+		if !info.IsDir() {
+			os.Remove(path)
+			return nil
+		}
+		return filepath.SkipDir
+	})
+}
+
 // confirmAndRemoveDB prompts the user for a last confirmation and removes the
-// folder if accepted.
-func confirmAndRemoveDB(database string, kind string) {
-	confirm, err := prompt.Stdin.PromptConfirm(fmt.Sprintf("Remove %s (%s)?", kind, database))
+// list of folders if accepted.
+func confirmAndRemoveDB(paths []string, kind string, ctx *cli.Context, removeFlagName string) {
+	var (
+		confirm bool
+		err     error
+	)
+	msg := fmt.Sprintf("Location(s) of '%s': \n", kind)
+	for _, path := range paths {
+		msg += fmt.Sprintf("\t- %s\n", path)
+	}
+	fmt.Println(msg)
+	if ctx.IsSet(removeFlagName) {
+		confirm = ctx.Bool(removeFlagName)
+		if confirm {
+			fmt.Printf("Remove '%s'? [y/n] y\n", kind)
+		} else {
+			fmt.Printf("Remove '%s'? [y/n] n\n", kind)
+		}
+	} else {
+		confirm, err = prompt.Stdin.PromptConfirm(fmt.Sprintf("Remove '%s'?", kind))
+	}
 	switch {
 	case err != nil:
 		utils.Fatalf("%v", err)
 	case !confirm:
-		log.Info("Database deletion skipped", "path", database)
+		log.Info("Database deletion skipped", "kind", kind, "paths", paths)
 	default:
-		start := time.Now()
-		filepath.Walk(database, func(path string, info os.FileInfo, err error) error {
-			// If we're at the top level folder, recurse into
-			if path == database {
-				return nil
+		var (
+			deleted []string
+			start   = time.Now()
+		)
+		for _, path := range paths {
+			if common.FileExist(path) {
+				removeFolder(path)
+				deleted = append(deleted, path)
+			} else {
+				log.Info("Folder is not existent", "path", path)
 			}
-			// Delete all the files, but not subfolders
-			if !info.IsDir() {
-				os.Remove(path)
-				return nil
-			}
-			return filepath.SkipDir
-		})
-		log.Info("Database successfully deleted", "path", database, "elapsed", common.PrettyDuration(time.Since(start)))
+		}
+		log.Info("Database successfully deleted", "kind", kind, "paths", deleted, "elapsed", common.PrettyDuration(time.Since(start)))
 	}
 }
 
@@ -486,7 +508,7 @@ func dbPut(ctx *cli.Context) error {
 
 // dbDumpTrie shows the key-value slots of a given storage trie
 func dbDumpTrie(ctx *cli.Context) error {
-	if ctx.NArg() < 1 {
+	if ctx.NArg() < 3 {
 		return fmt.Errorf("required arguments: %v", ctx.Command.ArgsUsage)
 	}
 	stack, _ := makeConfigNode(ctx)
@@ -494,35 +516,53 @@ func dbDumpTrie(ctx *cli.Context) error {
 
 	db := utils.MakeChainDatabase(ctx, stack, true)
 	defer db.Close()
+
+	triedb := utils.MakeTrieDatabase(ctx, db, false, true, false)
+	defer triedb.Close()
+
 	var (
-		root  []byte
-		start []byte
-		max   = int64(-1)
-		err   error
+		state   []byte
+		storage []byte
+		account []byte
+		start   []byte
+		max     = int64(-1)
+		err     error
 	)
-	if root, err = hexutil.Decode(ctx.Args().Get(0)); err != nil {
-		log.Info("Could not decode the root", "error", err)
+	if state, err = hexutil.Decode(ctx.Args().Get(0)); err != nil {
+		log.Info("Could not decode the state root", "error", err)
 		return err
 	}
-	stRoot := common.BytesToHash(root)
-	if ctx.NArg() >= 2 {
-		if start, err = hexutil.Decode(ctx.Args().Get(1)); err != nil {
+	if account, err = hexutil.Decode(ctx.Args().Get(1)); err != nil {
+		log.Info("Could not decode the account hash", "error", err)
+		return err
+	}
+	if storage, err = hexutil.Decode(ctx.Args().Get(2)); err != nil {
+		log.Info("Could not decode the storage trie root", "error", err)
+		return err
+	}
+	if ctx.NArg() > 3 {
+		if start, err = hexutil.Decode(ctx.Args().Get(3)); err != nil {
 			log.Info("Could not decode the seek position", "error", err)
 			return err
 		}
 	}
-	if ctx.NArg() >= 3 {
-		if max, err = strconv.ParseInt(ctx.Args().Get(2), 10, 64); err != nil {
+	if ctx.NArg() > 4 {
+		if max, err = strconv.ParseInt(ctx.Args().Get(4), 10, 64); err != nil {
 			log.Info("Could not decode the max count", "error", err)
 			return err
 		}
 	}
-	theTrie, err := trie.New(common.Hash{}, stRoot, trie.NewDatabase(db))
+	id := trie.StorageTrieID(common.BytesToHash(state), common.BytesToHash(account), common.BytesToHash(storage))
+	theTrie, err := trie.New(id, triedb)
+	if err != nil {
+		return err
+	}
+	trieIt, err := theTrie.NodeIterator(start)
 	if err != nil {
 		return err
 	}
 	var count int64
-	it := trie.NewIterator(theTrie.NodeIterator(start))
+	it := trie.NewIterator(trieIt)
 	for it.Next() {
 		if max > 0 && count == max {
 			fmt.Printf("Exiting after %d values\n", count)
@@ -553,16 +593,8 @@ func freezerInspect(ctx *cli.Context) error {
 		return err
 	}
 	stack, _ := makeConfigNode(ctx)
-	defer stack.Close()
-
-	db := utils.MakeChainDatabase(ctx, stack, true)
-	defer db.Close()
-
-	ancient, err := db.AncientDatadir()
-	if err != nil {
-		log.Info("Failed to retrieve ancient root", "err", err)
-		return err
-	}
+	ancient := stack.ResolveAncient("chaindata", ctx.String(utils.AncientFlag.Name))
+	stack.Close()
 	return rawdb.InspectFreezerTable(ancient, freezer, table, start, end)
 }
 
@@ -597,6 +629,7 @@ func importLDBdata(ctx *cli.Context) error {
 		close(stop)
 	}()
 	db := utils.MakeChainDatabase(ctx, stack, false)
+	defer db.Close()
 	return utils.ImportLDBData(db, fName, int64(start), stop)
 }
 
@@ -693,6 +726,7 @@ func exportChaindata(ctx *cli.Context) error {
 		close(stop)
 	}()
 	db := utils.MakeChainDatabase(ctx, stack, true)
+	defer db.Close()
 	return utils.ExportChaindata(ctx.Args().Get(1), kind, exporter(db), stop)
 }
 
@@ -700,135 +734,28 @@ func showMetaData(ctx *cli.Context) error {
 	stack, _ := makeConfigNode(ctx)
 	defer stack.Close()
 	db := utils.MakeChainDatabase(ctx, stack, true)
+	defer db.Close()
+
 	ancients, err := db.Ancients()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error accessing ancients: %v", err)
 	}
-	pp := func(val *uint64) string {
-		if val == nil {
-			return "<nil>"
-		}
-		return fmt.Sprintf("%d (%#x)", *val, *val)
-	}
-	data := [][]string{
-		{"databaseVersion", pp(rawdb.ReadDatabaseVersion(db))},
-		{"headBlockHash", fmt.Sprintf("%v", rawdb.ReadHeadBlockHash(db))},
-		{"headFastBlockHash", fmt.Sprintf("%v", rawdb.ReadHeadFastBlockHash(db))},
-		{"headHeaderHash", fmt.Sprintf("%v", rawdb.ReadHeadHeaderHash(db))},
-	}
+	data := rawdb.ReadChainMetadata(db)
+	data = append(data, []string{"frozen", fmt.Sprintf("%d items", ancients)})
+	data = append(data, []string{"snapshotGenerator", snapshot.ParseGeneratorStatus(rawdb.ReadSnapshotGenerator(db))})
 	if b := rawdb.ReadHeadBlock(db); b != nil {
 		data = append(data, []string{"headBlock.Hash", fmt.Sprintf("%v", b.Hash())})
 		data = append(data, []string{"headBlock.Root", fmt.Sprintf("%v", b.Root())})
 		data = append(data, []string{"headBlock.Number", fmt.Sprintf("%d (%#x)", b.Number(), b.Number())})
-	}
-	if b := rawdb.ReadSkeletonSyncStatus(db); b != nil {
-		data = append(data, []string{"SkeletonSyncStatus", string(b)})
 	}
 	if h := rawdb.ReadHeadHeader(db); h != nil {
 		data = append(data, []string{"headHeader.Hash", fmt.Sprintf("%v", h.Hash())})
 		data = append(data, []string{"headHeader.Root", fmt.Sprintf("%v", h.Root)})
 		data = append(data, []string{"headHeader.Number", fmt.Sprintf("%d (%#x)", h.Number, h.Number)})
 	}
-	data = append(data, [][]string{
-		{"frozen", fmt.Sprintf("%d items", ancients)},
-		{"lastPivotNumber", pp(rawdb.ReadLastPivotNumber(db))},
-		{"len(snapshotSyncStatus)", fmt.Sprintf("%d bytes", len(rawdb.ReadSnapshotSyncStatus(db)))},
-		{"snapshotGenerator", snapshot.ParseGeneratorStatus(rawdb.ReadSnapshotGenerator(db))},
-		{"snapshotDisabled", fmt.Sprintf("%v", rawdb.ReadSnapshotDisabled(db))},
-		{"snapshotJournal", fmt.Sprintf("%d bytes", len(rawdb.ReadSnapshotJournal(db)))},
-		{"snapshotRecoveryNumber", pp(rawdb.ReadSnapshotRecoveryNumber(db))},
-		{"snapshotRoot", fmt.Sprintf("%v", rawdb.ReadSnapshotRoot(db))},
-		{"txIndexTail", pp(rawdb.ReadTxIndexTail(db))},
-		{"fastTxLookupLimit", pp(rawdb.ReadFastTxLookupLimit(db))},
-	}...)
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{"Field", "Value"})
 	table.AppendBulk(data)
 	table.Render()
 	return nil
-}
-
-func freezerMigrate(ctx *cli.Context) error {
-	stack, _ := makeConfigNode(ctx)
-	defer stack.Close()
-
-	db := utils.MakeChainDatabase(ctx, stack, false)
-	defer db.Close()
-
-	// Check first block for legacy receipt format
-	numAncients, err := db.Ancients()
-	if err != nil {
-		return err
-	}
-	if numAncients < 1 {
-		log.Info("No receipts in freezer to migrate")
-		return nil
-	}
-
-	isFirstLegacy, firstIdx, err := dbHasLegacyReceipts(db, 0)
-	if err != nil {
-		return err
-	}
-	if !isFirstLegacy {
-		log.Info("No legacy receipts to migrate")
-		return nil
-	}
-
-	log.Info("Starting migration", "ancients", numAncients, "firstLegacy", firstIdx)
-	start := time.Now()
-	if err := db.MigrateTable("receipts", types.ConvertLegacyStoredReceipts); err != nil {
-		return err
-	}
-	if err := db.Close(); err != nil {
-		return err
-	}
-	log.Info("Migration finished", "duration", time.Since(start))
-
-	return nil
-}
-
-// dbHasLegacyReceipts checks freezer entries for legacy receipts. It stops at the first
-// non-empty receipt and checks its format. The index of this first non-empty element is
-// the second return parameter.
-func dbHasLegacyReceipts(db ethdb.Database, firstIdx uint64) (bool, uint64, error) {
-	// Check first block for legacy receipt format
-	numAncients, err := db.Ancients()
-	if err != nil {
-		return false, 0, err
-	}
-	if numAncients < 1 {
-		return false, 0, nil
-	}
-	if firstIdx >= numAncients {
-		return false, firstIdx, nil
-	}
-	var (
-		legacy       bool
-		blob         []byte
-		emptyRLPList = []byte{192}
-	)
-	// Find first block with non-empty receipt, only if
-	// the index is not already provided.
-	if firstIdx == 0 {
-		for i := uint64(0); i < numAncients; i++ {
-			blob, err = db.Ancient("receipts", i)
-			if err != nil {
-				return false, 0, err
-			}
-			if len(blob) == 0 {
-				continue
-			}
-			if !bytes.Equal(blob, emptyRLPList) {
-				firstIdx = i
-				break
-			}
-		}
-	}
-	// Is first non-empty receipt legacy?
-	first, err := db.Ancient("receipts", firstIdx)
-	if err != nil {
-		return false, 0, err
-	}
-	legacy, err = types.IsLegacyStoredReceipts(first)
-	return legacy, firstIdx, err
 }

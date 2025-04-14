@@ -36,12 +36,12 @@ var mockerList = map[string]func(net *Network, quit chan struct{}, nodeCount int
 	"boot":          boot,
 }
 
-// Lookup a mocker by its name, returns the mockerFn
+// LookupMocker looks a mocker by its name, returns the mockerFn
 func LookupMocker(mockerType string) func(net *Network, quit chan struct{}, nodeCount int) {
 	return mockerList[mockerType]
 }
 
-// Get a list of mockers (keys of the map)
+// GetMockerList returns a list of mockers (keys of the map)
 // Useful for frontend to build available mocker selection
 func GetMockerList() []string {
 	list := make([]string, 0, len(mockerList))
@@ -105,7 +105,7 @@ func probabilistic(net *Network, quit chan struct{}, nodeCount int) {
 	if err != nil {
 		select {
 		case <-quit:
-			// error may be due to abortion of mocking; so the quit channel is closed
+			//error may be due to abortion of mocking; so the quit channel is closed
 			return
 		default:
 			panic("Could not startup node network for mocker")
@@ -130,7 +130,7 @@ func probabilistic(net *Network, quit chan struct{}, nodeCount int) {
 			highid = rand1
 			lowid = rand2
 		}
-		steps := highid - lowid
+		var steps = highid - lowid
 		wg.Add(steps)
 		for i := lowid; i < highid; i++ {
 			select {

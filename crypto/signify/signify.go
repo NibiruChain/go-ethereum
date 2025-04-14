@@ -91,10 +91,10 @@ func SignFile(input string, output string, key string, untrustedComment string, 
 	commentSig := ed25519.Sign(skey, commentSigInput)
 
 	// Create the output file.
-	out := new(bytes.Buffer)
+	var out = new(bytes.Buffer)
 	fmt.Fprintln(out, "untrusted comment:", untrustedComment)
 	fmt.Fprintln(out, base64.StdEncoding.EncodeToString(dataSig))
 	fmt.Fprintln(out, "trusted comment:", trustedComment)
 	fmt.Fprintln(out, base64.StdEncoding.EncodeToString(commentSig))
-	return os.WriteFile(output, out.Bytes(), 0o644)
+	return os.WriteFile(output, out.Bytes(), 0644)
 }

@@ -65,7 +65,7 @@ func writeNodesJSON(file string, nodes nodeSet) {
 		os.Stdout.Write(nodesJSON)
 		return
 	}
-	if err := os.WriteFile(file, nodesJSON, 0o644); err != nil {
+	if err := os.WriteFile(file, nodesJSON, 0644); err != nil {
 		exit(err)
 	}
 }
@@ -103,8 +103,19 @@ func (ns nodeSet) topN(n int) nodeSet {
 	for _, v := range ns {
 		byscore = append(byscore, v)
 	}
+
+	cmpScore := func(a, b nodeJSON) int {
+		if a.Score > b.Score {
+			return 1
+		}
+		if a.Score < b.Score {
+			return -1
+		}
+		return 0
+	}
+	// NOTE: Sorts in descending order ( > 0)
 	sort.Slice(byscore, func(i, j int) bool {
-		return byscore[i].Score >= byscore[j].Score
+		return cmpScore(byscore[i], byscore[j]) > 0
 	})
 	result := make(nodeSet, n)
 	for _, v := range byscore[:n] {

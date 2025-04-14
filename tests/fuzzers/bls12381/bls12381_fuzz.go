@@ -14,8 +14,8 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
 
-//go:build gofuzz
-// +build gofuzz
+//go:build cgo
+// +build cgo
 
 package bls
 
@@ -26,6 +26,7 @@ import (
 	"io"
 	"math/big"
 
+	"github.com/consensys/gnark-crypto/ecc"
 	gnark "github.com/consensys/gnark-crypto/ecc/bls12-381"
 	"github.com/consensys/gnark-crypto/ecc/bls12-381/fp"
 	"github.com/consensys/gnark-crypto/ecc/bls12-381/fr"
@@ -34,7 +35,7 @@ import (
 	blst "github.com/supranational/blst/bindings/go"
 )
 
-func FuzzCrossPairing(data []byte) int {
+func fuzzCrossPairing(data []byte) int {
 	input := bytes.NewReader(data)
 
 	// get random G1 points
@@ -100,7 +101,7 @@ func massageBLST(in []byte) []byte {
 	return out
 }
 
-func FuzzCrossG1Add(data []byte) int {
+func fuzzCrossG1Add(data []byte) int {
 	input := bytes.NewReader(data)
 
 	// get random G1 points
@@ -138,7 +139,7 @@ func FuzzCrossG1Add(data []byte) int {
 	return 1
 }
 
-func FuzzCrossG2Add(data []byte) int {
+func fuzzCrossG2Add(data []byte) int {
 	input := bytes.NewReader(data)
 
 	// get random G2 points
@@ -176,7 +177,7 @@ func FuzzCrossG2Add(data []byte) int {
 	return 1
 }
 
-func FuzzCrossG1MultiExp(data []byte) int {
+func fuzzCrossG1MultiExp(data []byte) int {
 	var (
 		input        = bytes.NewReader(data)
 		gethScalars  []*big.Int
@@ -197,8 +198,8 @@ func FuzzCrossG1MultiExp(data []byte) int {
 			break
 		}
 		gethScalars = append(gethScalars, s)
-		gnarkScalar := &fr.Element{}
-		gnarkScalar = gnarkScalar.SetBigInt(s).FromMont()
+		var gnarkScalar = &fr.Element{}
+		gnarkScalar = gnarkScalar.SetBigInt(s)
 		gnarkScalars = append(gnarkScalars, *gnarkScalar)
 
 		gethPoints = append(gethPoints, new(bls12381.PointG1).Set(kp1))
@@ -217,7 +218,7 @@ func FuzzCrossG1MultiExp(data []byte) int {
 
 	// gnark multi exp
 	cp := new(gnark.G1Affine)
-	cp.MultiExp(gnarkPoints, gnarkScalars)
+	cp.MultiExp(gnarkPoints, gnarkScalars, ecc.MultiExpConfig{})
 
 	// compare result
 	if !(bytes.Equal(cp.Marshal(), g1.ToBytes(&kp))) {

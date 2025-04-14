@@ -6,14 +6,16 @@ import (
 )
 
 func TestMetricsSorting(t *testing.T) {
-	namedMetrics := namedMetricSlice{
+	var namedMetrics = []namedMetric{
 		{name: "zzz"},
 		{name: "bbb"},
 		{name: "fff"},
 		{name: "ggg"},
 	}
 
-	sort.Sort(namedMetrics)
+	sort.Slice(namedMetrics, func(i, j int) bool {
+		return namedMetrics[i].cmp(namedMetrics[j]) < 0
+	})
 	for i, name := range []string{"bbb", "fff", "ggg", "zzz"} {
 		if namedMetrics[i].name != name {
 			t.Fail()

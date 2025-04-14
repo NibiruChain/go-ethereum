@@ -165,7 +165,6 @@ func TestUDPv4_responseTimeouts(t *testing.T) {
 	test := newUDPTest(t)
 	defer test.close()
 
-	rand.Seed(time.Now().UnixNano())
 	randomDuration := func(max time.Duration) time.Duration {
 		return time.Duration(rand.Int63n(int64(max)))
 	}
@@ -270,7 +269,7 @@ func TestUDPv4_findnode(t *testing.T) {
 		}
 		nodes.push(n, numCandidates)
 	}
-	fillTable(test.table, nodes.entries)
+	fillTable(test.table, nodes.entries, false)
 
 	// ensure there's a bond with the test node,
 	// findnode won't be accepted otherwise.
@@ -313,7 +312,7 @@ func TestUDPv4_findnodeMultiReply(t *testing.T) {
 	test.table.db.UpdateLastPingReceived(rid, test.remoteaddr.IP, time.Now())
 
 	// queue a pending findnode request
-	resultc, errc := make(chan []*node), make(chan error)
+	resultc, errc := make(chan []*node, 1), make(chan error, 1)
 	go func() {
 		rid := encodePubkey(&test.remotekey.PublicKey).id()
 		ns, err := test.udp.findnode(rid, test.remoteaddr, testTarget)
@@ -395,7 +394,7 @@ func TestUDPv4_pingMatchIP(t *testing.T) {
 func TestUDPv4_successfulPing(t *testing.T) {
 	test := newUDPTest(t)
 	added := make(chan *node, 1)
-	test.table.nodeAddedHook = func(n *node) { added <- n }
+	test.table.nodeAddedHook = func(b *bucket, n *node) { added <- n }
 	defer test.close()
 
 	// The remote side sends a ping packet to initiate the exchange.
@@ -558,12 +557,7 @@ func startLocalhostV4(t *testing.T, cfg Config) *UDPv4 {
 
 	// Prefix logs with node ID.
 	lprefix := fmt.Sprintf("(%s)", ln.ID().TerminalString())
-	lfmt := log.TerminalFormat(false)
-	cfg.Log = testlog.Logger(t, log.LvlTrace)
-	cfg.Log.SetHandler(log.FuncHandler(func(r *log.Record) error {
-		t.Logf("%s %s", lprefix, lfmt.Format(r))
-		return nil
-	}))
+	cfg.Log = testlog.Logger(t, log.LevelTrace).With("node-id", lprefix)
 
 	// Listen.
 	socket, err := net.ListenUDP("udp4", &net.UDPAddr{IP: net.IP{127, 0, 0, 1}})

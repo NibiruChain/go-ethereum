@@ -35,6 +35,7 @@ import (
 type Test struct {
 	Name string
 	Fn   func(*T)
+	Slow bool
 }
 
 // Result is the result of a test execution.
@@ -79,7 +80,7 @@ func RunTAP(tests []Test, report io.Writer) []Result {
 }
 
 func run(tests []Test, output testOutput) []Result {
-	results := make([]Result, len(tests))
+	var results = make([]Result, len(tests))
 	for i, test := range tests {
 		buffer := new(bytes.Buffer)
 		logOutput := io.MultiWriter(buffer, output)

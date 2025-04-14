@@ -32,32 +32,25 @@ type weightedIterator struct {
 	priority int
 }
 
-// weightedIterators is a set of iterators implementing the sort.Interface.
-type weightedIterators []*weightedIterator
-
-// Len implements sort.Interface, returning the number of active iterators.
-func (its weightedIterators) Len() int { return len(its) }
-
-// Less implements sort.Interface, returning which of two iterators in the stack
-// is before the other.
-func (its weightedIterators) Less(i, j int) bool {
+func (it *weightedIterator) Cmp(other *weightedIterator) int {
 	// Order the iterators primarily by the account hashes
-	hashI := its[i].it.Hash()
-	hashJ := its[j].it.Hash()
+	hashI := it.it.Hash()
+	hashJ := other.it.Hash()
 
 	switch bytes.Compare(hashI[:], hashJ[:]) {
 	case -1:
-		return true
+		return -1
 	case 1:
-		return false
+		return 1
 	}
 	// Same account/storage-slot in multiple layers, split by priority
-	return its[i].priority < its[j].priority
-}
-
-// Swap implements sort.Interface, swapping two entries in the iterator stack.
-func (its weightedIterators) Swap(i, j int) {
-	its[i], its[j] = its[j], its[i]
+	if it.priority < other.priority {
+		return -1
+	}
+	if it.priority > other.priority {
+		return 1
+	}
+	return 0
 }
 
 // fastIterator is a more optimized multi-layer iterator which maintains a
@@ -69,7 +62,7 @@ type fastIterator struct {
 	curAccount []byte
 	curSlot    []byte
 
-	iterators weightedIterators
+	iterators []*weightedIterator
 	initiated bool
 	account   bool
 	fail      error
@@ -119,7 +112,7 @@ func newFastIterator(tree *Tree, root common.Hash, account common.Hash, seek com
 // which it prepares the stack for step-by-step iteration.
 func (fi *fastIterator) init() {
 	// Track which account hashes are iterators positioned on
-	positioned := make(map[common.Hash]int)
+	var positioned = make(map[common.Hash]int)
 
 	// Position all iterators and track how many remain live
 	for i := 0; i < len(fi.iterators); i++ {
@@ -167,7 +160,10 @@ func (fi *fastIterator) init() {
 		}
 	}
 	// Re-sort the entire list
-	sort.Sort(fi.iterators)
+	sort.Slice(fi.iterators, func(i, j int) bool {
+		return fi.iterators[i].Cmp(fi.iterators[j]) < 0
+	})
+
 	fi.initiated = false
 }
 
@@ -276,7 +272,7 @@ func (fi *fastIterator) next(idx int) bool {
 			return false
 		}
 		// The elem we're placing it next to has the same value,
-		// so whichever winds up on n+1 will need further iteraton
+		// so whichever winds up on n+1 will need further iteration
 		clash = n + 1
 
 		return cur.priority < fi.iterators[n+1].priority
