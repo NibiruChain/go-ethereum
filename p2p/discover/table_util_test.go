@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"math/rand"
 	"net"
+	"sort"
 	"sync"
 
 	"github.com/ethereum/go-ethereum/crypto"
@@ -220,8 +221,8 @@ func nodeEqual(n1 *enode.Node, n2 *enode.Node) bool {
 }
 
 func sortByID(nodes []*enode.Node) {
-	slices.SortFunc(nodes, func(a, b *enode.Node) int {
-		return bytes.Compare(a.ID().Bytes(), b.ID().Bytes())
+	sort.Slice(nodes, func(i, j int) bool {
+		return bytes.Compare(nodes[i].ID().Bytes(), nodes[j].ID().Bytes()) < 0
 	})
 }
 

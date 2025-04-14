@@ -21,6 +21,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -28,7 +29,6 @@ import (
 	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/trie/triestate"
-	"golang.org/x/exp/slices"
 )
 
 // State history records the state changes involved in executing a block. The
@@ -262,20 +262,26 @@ func newHistory(root common.Hash, parent common.Hash, block uint64, states *trie
 	for addr := range states.Accounts {
 		accountList = append(accountList, addr)
 	}
-	slices.SortFunc(accountList, common.Address.Cmp)
+	sort.Slice(accountList, func(i, j int) bool {
+		return accountList[i].Cmp(accountList[j]) < 0
+	})
 
 	for addr, slots := range states.Storages {
 		slist := make([]common.Hash, 0, len(slots))
 		for slotHash := range slots {
 			slist = append(slist, slotHash)
 		}
-		slices.SortFunc(slist, common.Hash.Cmp)
+		sort.Slice(slist, func(i, j int) bool {
+			return slist[i].Cmp(slist[j]) < 0
+		})
 		storageList[addr] = slist
 	}
 	for addr := range states.Incomplete {
 		incomplete = append(incomplete, addr)
 	}
-	slices.SortFunc(incomplete, common.Address.Cmp)
+	sort.Slice(incomplete, func(i, j int) bool {
+		return incomplete[i].Cmp(incomplete[j]) < 0
+	})
 
 	return &history{
 		meta: &meta{

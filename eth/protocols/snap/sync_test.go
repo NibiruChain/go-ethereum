@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"math/big"
 	mrand "math/rand"
+	"sort"
 	"sync"
 	"testing"
 	"time"
@@ -41,7 +42,6 @@ import (
 	"github.com/ethereum/go-ethereum/triedb/pathdb"
 	"github.com/holiman/uint256"
 	"golang.org/x/crypto/sha3"
-	"golang.org/x/exp/slices"
 )
 
 func TestHashing(t *testing.T) {
@@ -1521,7 +1521,9 @@ func makeAccountTrieNoStorage(n int, scheme string) (string, *trie.Trie, []*kv) 
 		accTrie.MustUpdate(elem.k, elem.v)
 		entries = append(entries, elem)
 	}
-	slices.SortFunc(entries, (*kv).cmp)
+	sort.Slice(entries, func(i, j int) bool {
+		return entries[i].cmp(entries[j]) < 0
+	})
 
 	// Commit the state changes into db and re-create the trie
 	// for accessing later.
@@ -1583,7 +1585,9 @@ func makeBoundaryAccountTrie(scheme string, n int) (string, *trie.Trie, []*kv) {
 		accTrie.MustUpdate(elem.k, elem.v)
 		entries = append(entries, elem)
 	}
-	slices.SortFunc(entries, (*kv).cmp)
+	sort.Slice(entries, func(i, j int) bool {
+		return entries[i].cmp(entries[j]) < 0
+	})
 
 	// Commit the state changes into db and re-create the trie
 	// for accessing later.
@@ -1630,7 +1634,9 @@ func makeAccountTrieWithStorageWithUniqueStorage(scheme string, accounts, slots 
 		storageRoots[common.BytesToHash(key)] = stRoot
 		storageEntries[common.BytesToHash(key)] = stEntries
 	}
-	slices.SortFunc(entries, (*kv).cmp)
+	sort.Slice(entries, func(i, j int) bool {
+		return entries[i].cmp(entries[j]) < 0
+	})
 
 	// Commit account trie
 	root, set, _ := accTrie.Commit(true)
@@ -1697,7 +1703,9 @@ func makeAccountTrieWithStorage(scheme string, accounts, slots int, code, bounda
 		storageRoots[common.BytesToHash(key)] = stRoot
 		storageEntries[common.BytesToHash(key)] = stEntries
 	}
-	slices.SortFunc(entries, (*kv).cmp)
+	sort.Slice(entries, func(i, j int) bool {
+		return entries[i].cmp(entries[j]) < 0
+	})
 
 	// Commit account trie
 	root, set, _ := accTrie.Commit(true)
@@ -1741,7 +1749,9 @@ func makeStorageTrieWithSeed(owner common.Hash, n, seed uint64, db *triedb.Datab
 		trie.MustUpdate(elem.k, elem.v)
 		entries = append(entries, elem)
 	}
-	slices.SortFunc(entries, (*kv).cmp)
+	sort.Slice(entries, func(i, j int) bool {
+		return entries[i].cmp(entries[j]) < 0
+	})
 	root, nodes, _ := trie.Commit(false)
 	return root, nodes, entries
 }
@@ -1792,7 +1802,9 @@ func makeBoundaryStorageTrie(owner common.Hash, n int, db *triedb.Database) (com
 		trie.MustUpdate(elem.k, elem.v)
 		entries = append(entries, elem)
 	}
-	slices.SortFunc(entries, (*kv).cmp)
+	sort.Slice(entries, func(i, j int) bool {
+		return entries[i].cmp(entries[j]) < 0
+	})
 	root, nodes, _ := trie.Commit(false)
 	return root, nodes, entries
 }
@@ -1824,7 +1836,9 @@ func makeUnevenStorageTrie(owner common.Hash, slots int, db *triedb.Database) (c
 			entries = append(entries, elem)
 		}
 	}
-	slices.SortFunc(entries, (*kv).cmp)
+	sort.Slice(entries, func(i, j int) bool {
+		return entries[i].cmp(entries[j]) < 0
+	})
 	root, nodes, _ := tr.Commit(false)
 	return root, nodes, entries
 }

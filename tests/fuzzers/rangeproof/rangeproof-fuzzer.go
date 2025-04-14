@@ -21,13 +21,13 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"sort"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/ethdb/memorydb"
 	"github.com/ethereum/go-ethereum/trie"
 	"github.com/ethereum/go-ethereum/triedb"
-	"golang.org/x/exp/slices"
 )
 
 type kv struct {
@@ -99,8 +99,8 @@ func (f *fuzzer) fuzz() int {
 	if len(entries) <= 1 {
 		return 0
 	}
-	slices.SortFunc(entries, func(a, b *kv) int {
-		return bytes.Compare(a.k, b.k)
+	sort.Slice(entries, func(i, j int) bool {
+		return bytes.Compare(entries[i].k, entries[j].k) < 0
 	})
 
 	var ok = 0

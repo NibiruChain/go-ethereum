@@ -19,13 +19,13 @@ package pathdb
 import (
 	"bytes"
 	"fmt"
+	"sort"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/trie/trienode"
 	"github.com/ethereum/go-ethereum/trie/triestate"
-	"golang.org/x/exp/slices"
 )
 
 // testHasher is a test utility for computing root hash of a batch of state
@@ -117,7 +117,9 @@ func hash(states map[common.Hash][]byte) (common.Hash, []byte) {
 	for hash := range states {
 		hs = append(hs, hash)
 	}
-	slices.SortFunc(hs, common.Hash.Cmp)
+	sort.Slice(hs, func(i, j int) bool {
+		return hs[i].Cmp(hs[j]) < 0
+	})
 
 	var input []byte
 	for _, hash := range hs {

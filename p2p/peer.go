@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"sort"
 	"sync"
 	"time"
 
@@ -31,7 +32,6 @@ import (
 	"github.com/ethereum/go-ethereum/p2p/enode"
 	"github.com/ethereum/go-ethereum/p2p/enr"
 	"github.com/ethereum/go-ethereum/rlp"
-	"golang.org/x/exp/slices"
 )
 
 var (
@@ -386,7 +386,10 @@ func countMatchingProtocols(protocols []Protocol, caps []Cap) int {
 
 // matchProtocols creates structures for matching named subprotocols.
 func matchProtocols(protocols []Protocol, caps []Cap, rw MsgReadWriter) map[string]*protoRW {
-	slices.SortFunc(caps, Cap.Cmp)
+	sort.Slice(caps, func(i, j int) bool {
+		return caps[i].Cmp(caps[j]) < 0
+	})
+
 	offset := baseProtocolLength
 	result := make(map[string]*protoRW)
 

@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"fmt"
 	"reflect"
+	"sort"
 	"strings"
 	"testing"
 
@@ -31,7 +32,6 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/triedb"
 	"github.com/holiman/uint256"
-	"golang.org/x/exp/slices"
 )
 
 var dumper = spew.ConfigState{Indent: "    "}
@@ -106,7 +106,9 @@ func TestAccountRange(t *testing.T) {
 	}
 	// Test to see if it's possible to recover from the middle of the previous
 	// set and get an even split between the first and second sets.
-	slices.SortFunc(hList, common.Hash.Cmp)
+	sort.Slice(hList, func(i, j int) bool {
+		return hList[i].Cmp(hList[j]) < 0
+	})
 	middleH := hList[AccountRangeMaxResults/2]
 	middleResult := accountRangeTest(t, &trie, sdb, middleH, AccountRangeMaxResults, AccountRangeMaxResults)
 	missing, infirst, insecond := 0, 0, 0

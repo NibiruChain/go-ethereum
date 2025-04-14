@@ -24,6 +24,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"sort"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -38,7 +39,6 @@ import (
 	"github.com/ethereum/go-ethereum/p2p/enr"
 	"github.com/ethereum/go-ethereum/p2p/nat"
 	"github.com/ethereum/go-ethereum/p2p/netutil"
-	"golang.org/x/exp/slices"
 )
 
 const (
@@ -510,7 +510,9 @@ func (srv *Server) setupLocalNode() error {
 	for _, p := range srv.Protocols {
 		srv.ourHandshake.Caps = append(srv.ourHandshake.Caps, p.cap())
 	}
-	slices.SortFunc(srv.ourHandshake.Caps, Cap.Cmp)
+	sort.Slice(srv.ourHandshake.Caps, func(i, j int) bool {
+		return srv.ourHandshake.Caps[i].Cmp(srv.ourHandshake.Caps[j]) < 0
+	})
 
 	// Create the local node.
 	db, err := enode.OpenDB(srv.NodeDatabase)

@@ -22,6 +22,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"sort"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/consensus/misc/eip4844"
@@ -31,7 +32,6 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rlp"
-	"golang.org/x/exp/slices"
 )
 
 // ReadCanonicalHash retrieves the hash assigned to a canonical block number.
@@ -890,9 +890,9 @@ func WriteBadBlock(db ethdb.KeyValueStore, block *types.Block) {
 		Header: block.Header(),
 		Body:   block.Body(),
 	})
-	slices.SortFunc(badBlocks, func(a, b *badBlock) int {
+	sort.Slice(badBlocks, func(i, j int) bool {
 		// Note: sorting in descending number order.
-		return -a.Header.Number.Cmp(b.Header.Number)
+		return badBlocks[i].Header.Number.Cmp(badBlocks[j].Header.Number) > 0
 	})
 	if len(badBlocks) > badBlockToKeep {
 		badBlocks = badBlocks[:badBlockToKeep]

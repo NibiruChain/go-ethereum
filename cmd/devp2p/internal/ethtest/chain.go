@@ -40,7 +40,6 @@ import (
 	"github.com/ethereum/go-ethereum/eth/protocols/eth"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rlp"
-	"golang.org/x/exp/slices"
 )
 
 // Chain is a lightweight blockchain-like store which can read a hivechain
@@ -108,8 +107,8 @@ func (c *Chain) AccountsInHashOrder() []state.DumpAccount {
 		}
 		i++
 	}
-	slices.SortFunc(list, func(x, y state.DumpAccount) int {
-		return bytes.Compare(x.AddressHash, y.AddressHash)
+	sort.Slice(list, func(i, j int) bool {
+		return bytes.Compare(list[i].AddressHash, list[j].AddressHash) < 0
 	})
 	return list
 }
@@ -127,7 +126,9 @@ func (c *Chain) CodeHashes() []common.Hash {
 		hashes = append(hashes, h)
 		seen[h] = struct{}{}
 	}
-	slices.SortFunc(hashes, (common.Hash).Cmp)
+	sort.Slice(hashes, func(i, j int) bool {
+		return hashes[i].Cmp(hashes[j]) < 0
+	})
 	return hashes
 }
 

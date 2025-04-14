@@ -28,6 +28,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"sort"
 	"testing"
 	"time"
 
@@ -54,7 +55,6 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/holiman/uint256"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/exp/slices"
 )
 
 func testTransactionMarshal(t *testing.T, tests []txData, config *params.ChainConfig) {
@@ -1304,7 +1304,9 @@ func newAccounts(n int) (accounts []account) {
 		addr := crypto.PubkeyToAddress(key.PublicKey)
 		accounts = append(accounts, account{key: key, addr: addr})
 	}
-	slices.SortFunc(accounts, func(a, b account) int { return a.addr.Cmp(b.addr) })
+	sort.Slice(accounts, func(i, j int) bool {
+		return accounts[i].addr.Cmp(accounts[j].addr) < 0
+	})
 	return accounts
 }
 

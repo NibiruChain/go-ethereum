@@ -31,7 +31,6 @@ import (
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/log"
-	"golang.org/x/exp/slices"
 )
 
 // Minimum amount of time between cache reloads. This limit applies if the platform does
@@ -194,7 +193,16 @@ func (ac *accountCache) find(a accounts.Account) (accounts.Account, error) {
 	default:
 		err := &AmbiguousAddrError{Addr: a.Address, Matches: make([]accounts.Account, len(matches))}
 		copy(err.Matches, matches)
-		slices.SortFunc(err.Matches, byURL)
+
+		// Note: Favor `sort.Slice` form the std lib since it's stable across
+		// different Go versions.
+		// ```
+		// slices.SortFunc(err.Matches, byURL)
+		// ```
+		sort.Slice(err.Matches, func(i, j int) bool {
+			return byURL(err.Matches[i], err.Matches[j]) < 0
+		})
+
 		return accounts.Account{}, err
 	}
 }

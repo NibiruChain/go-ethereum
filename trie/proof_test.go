@@ -22,13 +22,13 @@ import (
 	"encoding/binary"
 	"fmt"
 	mrand "math/rand"
+	"sort"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethdb/memorydb"
-	"golang.org/x/exp/slices"
 )
 
 // Prng is a pseudo random number generator seeded by strong randomness.
@@ -173,7 +173,9 @@ func TestRangeProof(t *testing.T) {
 	for _, kv := range vals {
 		entries = append(entries, kv)
 	}
-	slices.SortFunc(entries, (*kv).cmp)
+	sort.Slice(entries, func(i, j int) bool {
+		return entries[i].cmp(entries[j]) < 0
+	})
 	for i := 0; i < 500; i++ {
 		start := mrand.Intn(len(entries))
 		end := mrand.Intn(len(entries)-start) + start + 1
@@ -206,7 +208,9 @@ func TestRangeProofWithNonExistentProof(t *testing.T) {
 	for _, kv := range vals {
 		entries = append(entries, kv)
 	}
-	slices.SortFunc(entries, (*kv).cmp)
+	sort.Slice(entries, func(i, j int) bool {
+		return entries[i].cmp(entries[j]) < 0
+	})
 	for i := 0; i < 500; i++ {
 		start := mrand.Intn(len(entries))
 		end := mrand.Intn(len(entries)-start) + start + 1
@@ -248,7 +252,9 @@ func TestRangeProofWithInvalidNonExistentProof(t *testing.T) {
 	for _, kv := range vals {
 		entries = append(entries, kv)
 	}
-	slices.SortFunc(entries, (*kv).cmp)
+	sort.Slice(entries, func(i, j int) bool {
+		return entries[i].cmp(entries[j]) < 0
+	})
 
 	// Case 1
 	start, end := 100, 200
@@ -283,7 +289,9 @@ func TestOneElementRangeProof(t *testing.T) {
 	for _, kv := range vals {
 		entries = append(entries, kv)
 	}
-	slices.SortFunc(entries, (*kv).cmp)
+	sort.Slice(entries, func(i, j int) bool {
+		return entries[i].cmp(entries[j]) < 0
+	})
 
 	// One element with existent edge proof, both edge proofs
 	// point to the SAME key.
@@ -370,7 +378,9 @@ func TestAllElementsProof(t *testing.T) {
 	for _, kv := range vals {
 		entries = append(entries, kv)
 	}
-	slices.SortFunc(entries, (*kv).cmp)
+	sort.Slice(entries, func(i, j int) bool {
+		return entries[i].cmp(entries[j]) < 0
+	})
 
 	var k [][]byte
 	var v [][]byte
@@ -421,7 +431,9 @@ func TestSingleSideRangeProof(t *testing.T) {
 			trie.MustUpdate(value.k, value.v)
 			entries = append(entries, value)
 		}
-		slices.SortFunc(entries, (*kv).cmp)
+		sort.Slice(entries, func(i, j int) bool {
+			return entries[i].cmp(entries[j]) < 0
+		})
 
 		var cases = []int{0, 1, 50, 100, 1000, 2000, len(entries) - 1}
 		for _, pos := range cases {
@@ -454,7 +466,9 @@ func TestBadRangeProof(t *testing.T) {
 	for _, kv := range vals {
 		entries = append(entries, kv)
 	}
-	slices.SortFunc(entries, (*kv).cmp)
+	sort.Slice(entries, func(i, j int) bool {
+		return entries[i].cmp(entries[j]) < 0
+	})
 
 	for i := 0; i < 500; i++ {
 		start := mrand.Intn(len(entries))
@@ -557,7 +571,9 @@ func TestSameSideProofs(t *testing.T) {
 	for _, kv := range vals {
 		entries = append(entries, kv)
 	}
-	slices.SortFunc(entries, (*kv).cmp)
+	sort.Slice(entries, func(i, j int) bool {
+		return entries[i].cmp(entries[j]) < 0
+	})
 
 	pos := 1000
 	first := common.CopyBytes(entries[0].k)
@@ -599,7 +615,9 @@ func TestHasRightElement(t *testing.T) {
 		trie.MustUpdate(value.k, value.v)
 		entries = append(entries, value)
 	}
-	slices.SortFunc(entries, (*kv).cmp)
+	sort.Slice(entries, func(i, j int) bool {
+		return entries[i].cmp(entries[j]) < 0
+	})
 
 	var cases = []struct {
 		start   int
@@ -660,7 +678,9 @@ func TestEmptyRangeProof(t *testing.T) {
 	for _, kv := range vals {
 		entries = append(entries, kv)
 	}
-	slices.SortFunc(entries, (*kv).cmp)
+	sort.Slice(entries, func(i, j int) bool {
+		return entries[i].cmp(entries[j]) < 0
+	})
 
 	var cases = []struct {
 		pos int
@@ -695,7 +715,9 @@ func TestBloatedProof(t *testing.T) {
 	for _, kv := range kvs {
 		entries = append(entries, kv)
 	}
-	slices.SortFunc(entries, (*kv).cmp)
+	sort.Slice(entries, func(i, j int) bool {
+		return entries[i].cmp(entries[j]) < 0
+	})
 	var keys [][]byte
 	var vals [][]byte
 
@@ -729,7 +751,9 @@ func TestEmptyValueRangeProof(t *testing.T) {
 	for _, kv := range values {
 		entries = append(entries, kv)
 	}
-	slices.SortFunc(entries, (*kv).cmp)
+	sort.Slice(entries, func(i, j int) bool {
+		return entries[i].cmp(entries[j]) < 0
+	})
 
 	// Create a new entry with a slightly modified key
 	mid := len(entries) / 2
@@ -773,7 +797,9 @@ func TestAllElementsEmptyValueRangeProof(t *testing.T) {
 	for _, kv := range values {
 		entries = append(entries, kv)
 	}
-	slices.SortFunc(entries, (*kv).cmp)
+	sort.Slice(entries, func(i, j int) bool {
+		return entries[i].cmp(entries[j]) < 0
+	})
 
 	// Create a new entry with a slightly modified key
 	mid := len(entries) / 2
@@ -879,7 +905,9 @@ func benchmarkVerifyRangeProof(b *testing.B, size int) {
 	for _, kv := range vals {
 		entries = append(entries, kv)
 	}
-	slices.SortFunc(entries, (*kv).cmp)
+	sort.Slice(entries, func(i, j int) bool {
+		return entries[i].cmp(entries[j]) < 0
+	})
 
 	start := 2
 	end := start + size
@@ -916,7 +944,9 @@ func benchmarkVerifyRangeNoProof(b *testing.B, size int) {
 	for _, kv := range vals {
 		entries = append(entries, kv)
 	}
-	slices.SortFunc(entries, (*kv).cmp)
+	sort.Slice(entries, func(i, j int) bool {
+		return entries[i].cmp(entries[j]) < 0
+	})
 
 	var keys [][]byte
 	var values [][]byte

@@ -3,10 +3,9 @@ package metrics
 import (
 	"fmt"
 	"io"
+	"sort"
 	"strings"
 	"time"
-
-	"golang.org/x/exp/slices"
 )
 
 // Write sorts writes each metric in the given registry periodically to the
@@ -24,7 +23,11 @@ func WriteOnce(r Registry, w io.Writer) {
 	r.Each(func(name string, i interface{}) {
 		namedMetrics = append(namedMetrics, namedMetric{name, i})
 	})
-	slices.SortFunc(namedMetrics, namedMetric.cmp)
+
+	sort.Slice(namedMetrics, func(i, j int) bool {
+		metricI, metricJ := namedMetrics[i], namedMetrics[j]
+		return metricI.cmp(metricJ) < 0
+	})
 	for _, namedMetric := range namedMetrics {
 		switch metric := namedMetric.m.(type) {
 		case Counter:
