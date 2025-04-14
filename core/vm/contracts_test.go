@@ -101,12 +101,14 @@ func testPrecompiled(addr string, test precompiledTest, t *testing.T) {
 	t.Run(fmt.Sprintf("%s-Gas=%d", test.Name, gas), func(t *testing.T) {
 		if res, _, err := RunPrecompiledContract(
 			new(EVM), // EVM (unused here)
+			common.Address{},
 			p,
 			AccountRef(common.Address{}), // caller (unused here)
 			in,
 			gas,
 			new(uint256.Int), // value (unused here)
 			false,            // readOnly
+			false,
 		); err != nil {
 			t.Error(err)
 		} else if common.Bytes2Hex(res) != test.Expected {
@@ -131,12 +133,14 @@ func testPrecompiledOOG(addr string, test precompiledTest, t *testing.T) {
 	t.Run(fmt.Sprintf("%s-Gas=%d", test.Name, gas), func(t *testing.T) {
 		_, _, err := RunPrecompiledContract(
 			new(EVM), // EVM (unused here)
+			common.Address{},
 			p,
 			AccountRef(common.Address{}), // caller (unused here)
 			in,
 			gas,
 			new(uint256.Int), // value (unused here)
 			false,            // readOnly
+			false,
 		)
 		if err.Error() != "out of gas" {
 			t.Errorf("Expected error [out of gas], got [%v]", err)
@@ -156,12 +160,14 @@ func testPrecompiledFailure(addr string, test precompiledFailureTest, t *testing
 	t.Run(test.Name, func(t *testing.T) {
 		_, _, err := RunPrecompiledContract(
 			new(EVM), // EVM (unused here)
+			common.Address{},
 			p,
 			AccountRef(common.Address{}), // caller (unused here)
 			in,
 			gas,
 			new(uint256.Int), // value (unused here)
 			false,            // readOnly
+			false,
 		)
 		if err.Error() != test.ExpectedError {
 			t.Errorf("Expected error [%v], got [%v]", test.ExpectedError, err)
@@ -196,12 +202,14 @@ func benchmarkPrecompiled(addr string, test precompiledTest, bench *testing.B) {
 			copy(data, in)
 			res, _, err = RunPrecompiledContract(
 				new(EVM), // EVM (unused here)
+				common.Address{},
 				p,
 				AccountRef(common.Address{}), // caller (unused here)
 				data,
 				reqGas,
 				new(uint256.Int), // value (unused here)
 				false,            // readOnly
+				false,
 			)
 		}
 		bench.StopTimer()

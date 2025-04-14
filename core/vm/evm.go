@@ -226,12 +226,14 @@ func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas 
 	if isPrecompile {
 		ret, gas, err = RunPrecompiledContract(
 			evm,
+			caller.Address(),
 			p,
 			caller,
 			input,
 			gas,
 			value, // value
 			false, // readOnly
+			false,
 		)
 	} else {
 		// Initialise a new contract and set the code that is to be used by the EVM.
@@ -297,12 +299,14 @@ func (evm *EVM) CallCode(caller ContractRef, addr common.Address, input []byte, 
 	if p, isPrecompile := evm.precompile(addr); isPrecompile {
 		ret, gas, err = RunPrecompiledContract(
 			evm,
+			caller.Address(),
 			p,
 			caller,
 			input,
 			gas,
 			value, // value
 			false, // readOnly
+			false,
 		)
 	} else {
 		addrCopy := addr
@@ -348,14 +352,18 @@ func (evm *EVM) DelegateCall(caller ContractRef, addr common.Address, input []by
 
 	// It is allowed to call precompiles, even via delegatecall
 	if p, isPrecompile := evm.precompile(addr); isPrecompile {
+		parent := caller.(*Contract)
+
 		ret, gas, err = RunPrecompiledContract(
 			evm,
+			parent.CallerAddress, // caller is the caller of the caller
 			p,
 			caller,
 			input,
 			gas,
 			(*uint256.Int)(nil), // value
 			false,               // readOnly
+			true,                // calledFromDelegatedCall
 		)
 	} else {
 		addrCopy := addr
@@ -407,12 +415,14 @@ func (evm *EVM) StaticCall(caller ContractRef, addr common.Address, input []byte
 	if p, isPrecompile := evm.precompile(addr); isPrecompile {
 		ret, gas, err = RunPrecompiledContract(
 			evm,
+			caller.Address(),
 			p,
 			caller,
 			input,
 			gas,
 			new(uint256.Int), // value
 			true,             // readOnly
+			false,
 		)
 	} else {
 		// At this point, we use a copy of address. If we don't, the go compiler will
