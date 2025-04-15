@@ -46,7 +46,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
-	"sort"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -291,9 +291,8 @@ func writeAuthors(files []string) {
 		}
 	}
 	// Write sorted list of authors back to the file.
-	sort.Slice(list, func(i, j int) bool {
-		a, b := list[i], list[j]
-		return strings.ToLower(a) < strings.ToLower(b)
+	slices.SortFunc(list, func(a, b string) int {
+		return strings.Compare(strings.ToLower(a), strings.ToLower(b))
 	})
 	content := new(bytes.Buffer)
 	content.WriteString(authorsFileHeader)

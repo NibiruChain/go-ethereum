@@ -19,12 +19,13 @@ package snapshot
 import (
 	"bytes"
 	"fmt"
+	"slices"
 	"sort"
 
 	"github.com/ethereum/go-ethereum/common"
 )
 
-// weightedIterator is a iterator with an assigned weight. It is used to prioritise
+// weightedIterator is an iterator with an assigned weight. It is used to prioritise
 // which account or storage slot is the correct one if multiple iterators find the
 // same one (modified in multiple consecutive blocks).
 type weightedIterator struct {
@@ -160,10 +161,7 @@ func (fi *fastIterator) init() {
 		}
 	}
 	// Re-sort the entire list
-	sort.Slice(fi.iterators, func(i, j int) bool {
-		return fi.iterators[i].Cmp(fi.iterators[j]) < 0
-	})
-
+	slices.SortFunc(fi.iterators, func(a, b *weightedIterator) int { return a.Cmp(b) })
 	fi.initiated = false
 }
 

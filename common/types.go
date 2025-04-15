@@ -248,14 +248,6 @@ func (a Address) Bytes() []byte { return a[:] }
 // Big converts an address to a big integer.
 func (a Address) Big() *big.Int { return new(big.Int).SetBytes(a[:]) }
 
-// Hash converts an address to a hash by left-padding the address bytes with zeros.
-//
-// Note: This is different from BigToHash(a.Big()) because the intermediate conversion
-// to *big.Int uses a minimal byte representation, potentially stripping leading
-// zero bytes from the address before padding occurs in BytesToHash.
-// This implementation directly uses the full 20 address bytes for consistent padding.
-func (a Address) Hash() Hash { return BytesToHash(a.Bytes()) }
-
 // Hex returns an EIP55-compliant hex string representation of the address.
 func (a Address) Hex() string {
 	return string(a.checksumHex())
@@ -476,10 +468,21 @@ func (d *Decimal) UnmarshalJSON(input []byte) error {
 	if !isString(input) {
 		return &json.UnmarshalTypeError{Value: "non-string", Type: reflect.TypeOf(uint64(0))}
 	}
-	if i, err := strconv.ParseInt(string(input[1:len(input)-1]), 10, 64); err == nil {
+	if i, err := strconv.ParseUint(string(input[1:len(input)-1]), 10, 64); err == nil {
 		*d = Decimal(i)
 		return nil
 	} else {
 		return err
 	}
+}
+
+type PrettyBytes []byte
+
+// TerminalString implements log.TerminalStringer, formatting a string for console
+// output during logging.
+func (b PrettyBytes) TerminalString() string {
+	if len(b) < 7 {
+		return fmt.Sprintf("%x", b)
+	}
+	return fmt.Sprintf("%#x...%x (%dB)", b[:3], b[len(b)-3:], len(b))
 }
