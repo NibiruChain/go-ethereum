@@ -3292,7 +3292,7 @@ type precompileContract struct{}
 func (p *precompileContract) RequiredGas(input []byte) uint64 { return 0 }
 
 func (p *precompileContract) Run(
-	evm *vm.EVM, contract *vm.Contract, readonly bool,
+	evm *vm.EVM, _ common.Address, contract *vm.Contract, readonly bool, _ bool,
 ) ([]byte, error) {
 	return nil, nil
 }
