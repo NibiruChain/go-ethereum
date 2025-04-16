@@ -82,6 +82,16 @@ func (h Hash) Bytes() []byte { return h[:] }
 // Big converts a hash to a big integer.
 func (h Hash) Big() *big.Int { return new(big.Int).SetBytes(h[:]) }
 
+// Hash converts an address to a hash by left-padding the address bytes with
+// zeros.
+//
+// Note: This is different from BigToHash(a.Big()) because the intermediate
+// conversion to *big.Int uses a minimal byte representation, potentially
+// stripping leading zero bytes from the address before padding occurs in
+// BytesToHash. This implementation directly uses the full 20 address bytes for
+// consistent padding.
+func (a Address) Hash() Hash { return BytesToHash(a.Bytes()) }
+
 // Hex converts a hash to a hex string.
 func (h Hash) Hex() string { return hexutil.Encode(h[:]) }
 
