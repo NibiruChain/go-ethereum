@@ -1,7 +1,7 @@
 package metrics
 
 import (
-	"sort"
+	"slices"
 	"testing"
 )
 
@@ -13,9 +13,7 @@ func TestMetricsSorting(t *testing.T) {
 		{name: "ggg"},
 	}
 
-	sort.Slice(namedMetrics, func(i, j int) bool {
-		return namedMetrics[i].cmp(namedMetrics[j]) < 0
-	})
+	slices.SortFunc(namedMetrics, namedMetric.cmp)
 	for i, name := range []string{"bbb", "fff", "ggg", "zzz"} {
 		if namedMetrics[i].name != name {
 			t.Fail()

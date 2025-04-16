@@ -30,6 +30,7 @@ import (
 	"fmt"
 	"math/big"
 	"os"
+	"slices"
 	"strconv"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -67,16 +68,15 @@ func makelist(g *core.Genesis) []allocItem {
 			for key, val := range account.Storage {
 				misc.Slots = append(misc.Slots, allocItemStorageItem{key, val})
 			}
-			sort.Slice(misc.Slots, func(i, j int) bool {
-				return misc.Slots[i].Key.Cmp(misc.Slots[j].Key) < 0
+			slices.SortFunc(misc.Slots, func(a, b allocItemStorageItem) int {
+				return a.Key.Cmp(b.Key)
 			})
 		}
 		bigAddr := new(big.Int).SetBytes(addr.Bytes())
 		items = append(items, allocItem{bigAddr, account.Balance, misc})
 	}
-
-	sort.Slice(items, func(i, j int) bool {
-		return items[i].Addr.Cmp(items[j].Addr) < 0
+	slices.SortFunc(items, func(a, b allocItem) int {
+		return a.Addr.Cmp(b.Addr)
 	})
 	return items
 }
@@ -101,6 +101,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	defer file.Close()
 	if err := json.NewDecoder(file).Decode(g); err != nil {
 		panic(err)
 	}

@@ -3,7 +3,7 @@ package metrics
 import (
 	"fmt"
 	"io"
-	"sort"
+	"slices"
 	"strings"
 	"time"
 )
@@ -23,11 +23,7 @@ func WriteOnce(r Registry, w io.Writer) {
 	r.Each(func(name string, i interface{}) {
 		namedMetrics = append(namedMetrics, namedMetric{name, i})
 	})
-
-	sort.Slice(namedMetrics, func(i, j int) bool {
-		metricI, metricJ := namedMetrics[i], namedMetrics[j]
-		return metricI.cmp(metricJ) < 0
-	})
+	slices.SortFunc(namedMetrics, namedMetric.cmp)
 	for _, namedMetric := range namedMetrics {
 		switch metric := namedMetric.m.(type) {
 		case Counter:
