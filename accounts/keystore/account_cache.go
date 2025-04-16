@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 	"sync"
@@ -43,8 +44,7 @@ func byURL(a, b accounts.Account) int {
 	return a.URL.Cmp(b.URL)
 }
 
-// AmbiguousAddrError is returned when attempting to unlock
-// an address for which more than one file exists.
+// AmbiguousAddrError is returned when an address matches multiple files.
 type AmbiguousAddrError struct {
 	Addr    common.Address
 	Matches []accounts.Account
@@ -193,16 +193,7 @@ func (ac *accountCache) find(a accounts.Account) (accounts.Account, error) {
 	default:
 		err := &AmbiguousAddrError{Addr: a.Address, Matches: make([]accounts.Account, len(matches))}
 		copy(err.Matches, matches)
-
-		// Note: Favor `sort.Slice` form the std lib since it's stable across
-		// different Go versions.
-		// ```
-		// slices.SortFunc(err.Matches, byURL)
-		// ```
-		sort.Slice(err.Matches, func(i, j int) bool {
-			return byURL(err.Matches[i], err.Matches[j]) < 0
-		})
-
+		slices.SortFunc(err.Matches, byURL)
 		return accounts.Account{}, err
 	}
 }

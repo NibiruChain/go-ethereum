@@ -26,7 +26,8 @@ import (
 	"io"
 	"math/big"
 	"os"
-	"path"
+	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 
@@ -55,21 +56,21 @@ type Chain struct {
 // NewChain takes the given chain.rlp file, and decodes and returns
 // the blocks from the file.
 func NewChain(dir string) (*Chain, error) {
-	gen, err := loadGenesis(path.Join(dir, "genesis.json"))
+	gen, err := loadGenesis(filepath.Join(dir, "genesis.json"))
 	if err != nil {
 		return nil, err
 	}
 	gblock := gen.ToBlock()
 
-	blocks, err := blocksFromFile(path.Join(dir, "chain.rlp"), gblock)
+	blocks, err := blocksFromFile(filepath.Join(dir, "chain.rlp"), gblock)
 	if err != nil {
 		return nil, err
 	}
-	state, err := readState(path.Join(dir, "headstate.json"))
+	state, err := readState(filepath.Join(dir, "headstate.json"))
 	if err != nil {
 		return nil, err
 	}
-	accounts, err := readAccounts(path.Join(dir, "accounts.json"))
+	accounts, err := readAccounts(filepath.Join(dir, "accounts.json"))
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +100,6 @@ func (c *Chain) AccountsInHashOrder() []state.DumpAccount {
 	list := make([]state.DumpAccount, len(c.state))
 	i := 0
 	for addr, acc := range c.state {
-		addr := addr
 		list[i] = acc
 		list[i].Address = &addr
 		if len(acc.AddressHash) != 32 {
@@ -107,8 +107,8 @@ func (c *Chain) AccountsInHashOrder() []state.DumpAccount {
 		}
 		i++
 	}
-	sort.Slice(list, func(i, j int) bool {
-		return bytes.Compare(list[i].AddressHash, list[j].AddressHash) < 0
+	slices.SortFunc(list, func(x, y state.DumpAccount) int {
+		return bytes.Compare(x.AddressHash, y.AddressHash)
 	})
 	return list
 }
@@ -126,9 +126,7 @@ func (c *Chain) CodeHashes() []common.Hash {
 		hashes = append(hashes, h)
 		seen[h] = struct{}{}
 	}
-	sort.Slice(hashes, func(i, j int) bool {
-		return hashes[i].Cmp(hashes[j]) < 0
-	})
+	slices.SortFunc(hashes, (common.Hash).Cmp)
 	return hashes
 }
 

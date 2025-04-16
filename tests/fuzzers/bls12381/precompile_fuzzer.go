@@ -22,19 +22,18 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/holiman/uint256"
 )
 
 const (
-	blsG1Add      = byte(10)
-	blsG1Mul      = byte(11)
-	blsG1MultiExp = byte(12)
-	blsG2Add      = byte(13)
-	blsG2Mul      = byte(14)
-	blsG2MultiExp = byte(15)
-	blsPairing    = byte(16)
-	blsMapG1      = byte(17)
-	blsMapG2      = byte(18)
+	blsG1Add      = byte(11)
+	blsG1Mul      = byte(12)
+	blsG1MultiExp = byte(13)
+	blsG2Add      = byte(14)
+	blsG2Mul      = byte(15)
+	blsG2MultiExp = byte(16)
+	blsPairing    = byte(17)
+	blsMapG1      = byte(18)
+	blsMapG2      = byte(19)
 )
 
 func checkInput(id byte, inputLen int) bool {
@@ -83,15 +82,7 @@ func fuzz(id byte, data []byte) int {
 	}
 	cpy := make([]byte, len(data))
 	copy(cpy, data)
-
-	contract := vm.NewContract(
-		vm.AccountRef(common.Address{}),
-		vm.AccountRef(precompile.Address()),
-		(*uint256.Int)(nil), // value
-		gas,
-	)
-	contract.Input = cpy
-	_, err := precompile.Run(new(vm.EVM), contract, false)
+	_, err := precompile.Run(cpy)
 	if !bytes.Equal(cpy, data) {
 		panic(fmt.Sprintf("input data modified, precompile %d: %x %x", id, data, cpy))
 	}
