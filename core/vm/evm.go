@@ -18,6 +18,7 @@ package vm
 
 import (
 	"errors"
+	"fmt"
 	"math/big"
 	"sync/atomic"
 
@@ -605,6 +606,7 @@ func (evm *EVM) captureBegin(depth int, typ OpCode, from common.Address, to comm
 	if tracer.OnGasChange != nil {
 		tracer.OnGasChange(0, startGas, tracing.GasChangeCallInitialBalance)
 	}
+	fmt.Printf("TODO: UD-DEBUG: EVM.captureBegin: tracer.OnEnter: %T, tracer.OnGasChange: %T, tracer.OnExit: %T", tracer.OnEnter, tracer.OnGasChange, tracer.OnExit)
 }
 
 func (evm *EVM) captureEnd(depth int, startGas uint64, leftOverGas uint64, ret []byte, err error) {

@@ -164,8 +164,10 @@ func TransactionToMessage(tx *types.Transaction, s types.Signer, baseFee *big.In
 		AccessList:       tx.AccessList(),
 		SkipNonceChecks:  false,
 		SkipFromEOACheck: false,
-		BlobHashes:       tx.BlobHashes(),
-		BlobGasFeeCap:    tx.BlobGasFeeCap(),
+		BlobHashes:       nil,
+		BlobGasFeeCap:    nil,
+		// BlobHashes:       tx.BlobHashes(),
+		// BlobGasFeeCap:    tx.BlobGasFeeCap(),
 	}
 	// If baseFee provided, set gasPrice to effectiveGasPrice.
 	if baseFee != nil {
@@ -333,8 +335,9 @@ func (st *StateTransition) preCheck() error {
 			}
 		}
 	}
+	isCancun := st.evm.ChainConfig().IsCancun(st.evm.Context.BlockNumber, st.evm.Context.Time)
 	// Check the blob version validity
-	if msg.BlobHashes != nil {
+	if isCancun && msg.BlobHashes != nil {
 		// The to field of a blob tx type is mandatory, and a `BlobTx` transaction internally
 		// has it as a non-nillable value, so any msg derived from blob transaction has it non-nil.
 		// However, messages created through RPC (eth_call) don't have this restriction.
@@ -351,7 +354,7 @@ func (st *StateTransition) preCheck() error {
 		}
 	}
 	// Check that the user is paying at least the current blob fee
-	if st.evm.ChainConfig().IsCancun(st.evm.Context.BlockNumber, st.evm.Context.Time) {
+	if isCancun {
 		if st.blobGasUsed() > 0 {
 			// Skip the checks if gas fields are zero and blobBaseFee was explicitly disabled (eth_call)
 			skipCheck := st.evm.Config.NoBaseFee && msg.BlobGasFeeCap.BitLen() == 0
