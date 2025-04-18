@@ -164,10 +164,8 @@ func TransactionToMessage(tx *types.Transaction, s types.Signer, baseFee *big.In
 		AccessList:       tx.AccessList(),
 		SkipNonceChecks:  false,
 		SkipFromEOACheck: false,
-		BlobHashes:       nil,
-		BlobGasFeeCap:    nil,
-		// BlobHashes:       tx.BlobHashes(),
-		// BlobGasFeeCap:    tx.BlobGasFeeCap(),
+		BlobHashes:       tx.BlobHashes(),
+		BlobGasFeeCap:    tx.BlobGasFeeCap(),
 	}
 	// If baseFee provided, set gasPrice to effectiveGasPrice.
 	if baseFee != nil {
