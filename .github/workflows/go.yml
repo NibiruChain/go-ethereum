@@ -24,15 +24,33 @@ jobs:
           cache: true
 
       - name: "Install just"
+        uses: taiki-e/install-action@just
         # casey/just: https://just.systems/man/en/chapter_6.html
         # taiki-e/install-action: https://github.com/taiki-e/install-action
-        uses: taiki-e/install-action@just
-
-      - name: "Run go build ./..."
-        run: just test-build
 
       - name: Run tests
         run: just test-unit
+        env:
+          GOOS: linux
+          GOARCH: 386
+
+  go-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.24
+          cache: true
+
+      - name: "Install just"
+        uses: taiki-e/install-action@just
+        # casey/just: https://just.systems/man/en/chapter_6.html
+        # taiki-e/install-action: https://github.com/taiki-e/install-action
+
+      - name: "Run go build ./..."
+        run: just test-build
         env:
           GOOS: linux
           GOARCH: 386
