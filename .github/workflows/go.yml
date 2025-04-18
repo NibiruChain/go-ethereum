@@ -1,24 +1,38 @@
-name: i386 linux tests
+name: Go Tests
 
 on:
   push:
-    branches: [ master ]
+    branches: ["nibiru/geth", "master", "nibiru/**"]
   pull_request:
-    branches: [ master ]
   workflow_dispatch:
 
+# Allow concurrent runs on certain branches: [nibiru/geth, release/*]
+# but isolate all other branches
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.head_ref }}
+  cancel-in-progress: ${{ ! (github.ref == 'refs/heads/nibiru/geth' || startsWith(github.ref, 'refs/heads/release/')) }}
+
 jobs:
-  build:
-    runs-on: self-hosted
+  go-tests:
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: 1.23.0
-          cache: false
+          go-version: 1.24
+          cache: true
+
+      - name: "Install just"
+        # casey/just: https://just.systems/man/en/chapter_6.html
+        # taiki-e/install-action: https://github.com/taiki-e/install-action
+        uses: taiki-e/install-action@just
+
+      - name: "Run go build ./..."
+        run: just test-build
+
       - name: Run tests
-        run: go test -short ./...
+        run: just test-unit
         env:
           GOOS: linux
           GOARCH: 386
