@@ -23,9 +23,8 @@ jobs:
           go-version: 1.24
           cache: true
 
-      - name: "Install just"
+      - name: "Install just" # casey/just: https://just.systems/man/en/chapter_6.html
         uses: taiki-e/install-action@just
-        # casey/just: https://just.systems/man/en/chapter_6.html
         # taiki-e/install-action: https://github.com/taiki-e/install-action
 
       - name: Run tests
@@ -44,9 +43,8 @@ jobs:
           go-version: 1.24
           cache: true
 
-      - name: "Install just"
+      - name: "Install just" # casey/just: https://just.systems/man/en/chapter_6.html
         uses: taiki-e/install-action@just
-        # casey/just: https://just.systems/man/en/chapter_6.html
         # taiki-e/install-action: https://github.com/taiki-e/install-action
 
       - name: "Run go build ./..."
