@@ -1,0 +1,163 @@
+# .cursorignore
+#
+# ## .cursorignore Syntax Exmaple
+# It's generally close to .gitignore syntax with. Examples:
+# config.json     # Specific file
+# dist/           # Directory
+# *.log           # File extension
+# **/logs         # Nested directories
+# !app/           # Exclude from ignore (negate) 
+#
+# -----------------------------------------------------------------
+
+# Include (!, exclude from ignroe) all patterns from .gitignore
+!.gitignore
+
+# Additional patterns specific to Cursor
+.env*
+**/credentials/*
+**/secrets/*
+private/
+confidential/
+
+# Large binary files and datasets
+*.bin
+*.dat
+*.db
+*.sqlite
+*.sqlite3
+
+# Exclude large generated files
+node_modules/
+dist/
+.cache/ 
+
+# -----------------------------------------------------------------
+# Custom nibi-geth
+# -----------------------------------------------------------------
+
+# Remove the fuzz
+*fuzz*
+fuzzing
+fuzzers
+
+# Reduce codebase size to relevant bits.
+#
+# Lines of Code analysis:
+#
+# REGEX: .*\.\(go\|rs\|md\)
+#   330910 total
+
+# - [x] core/: 247 files, 85212 lines
+# - [x] eth/: 129 files, 43454 lines
+# - [x] cmd/: 128 files, 28837 lines
+# - [x] accounts/: 74 files, 26821 lines
+# - [x] p2p/: 87 files, 24739 lines
+# - [x] internal/: 56 files, 14850 lines CHECK
+# - [x] trie/: 33 files, 11828 lines
+# - [x] crypto/: 75 files, 11121 lines
+# - [x] beacon/: 40 files, 7433 lines
+# - [ ] common/: 47 files, 7228 lines  CHECK
+# - [x] metrics/: 67 files, 7225 lines
+# - [x] rpc/: 30 files, 7167 lines
+# - [x] signer/: 26 files, 6882 lines
+# - [x] rlp/: 21 files, 6778 lines
+# - [x] triedb/: 24 files, 5652 lines
+# - [x] node/: 19 files, 5104 lines
+# - [x] tests/: 29 files, 4620 lines
+# - [x] consensus/: 19 files, 4224 lines
+# - [x] ethclient/: 11 files, 3265 lines
+# - [x] ethdb/: 11 files, 2698 lines
+# - [x] graphql/: 6 files, 2651 lines
+# - [x] event/: 14 files, 2469 lines
+# - [x] build/: 5 files, 2392 lines
+# - [x] miner/: 8 files, 1816 lines
+# - [x] params/: 9 files, 1656 lines
+# - [x] log/: 7 files, 1322 lines
+# - [x] console/: 4 files, 1251 lines
+# - [x] ethstats/: 2 files, 885 lines
+# - [x] docs/: 1 files, 266 lines
+# - [x] ai-ctx/: 1 files, 212 lines
+# - [x] version/: 1 files, 24 lines
+
+#  core/: 247 files, 85212 lines
+
+# core/state/: 45 files, 17253 lines
+# Important core/state/statdb.go: Example StateDB implementation on Ethereum
+core/state/snapshot # 19 files, 8346 lines
+core/state/pruner # 2 files, 617 lines
+
+core/txpool/: 24 files, 11590 lines
+core/rawdb/: 35 files, 11097 lines
+core/bloombits # 7 files, 1441 lines
+core/asm # 7 files, 1020 lines
+core/forkid # 2 files, 718 lines
+
+# Don't ignore - Improtant or Used in Nibiru 
+# core/vm # 45 files, 13297 lines
+# core/types # 38 files, 7247 lines
+# core/tracing # 3 files, 452 lines
+# core/stateless # 3 files, 265 lines
+
+#  eth/: 129 files, 43454 lines
+
+eth/protocols    # 11082 loc
+# eth/tracers ?  # 9215 loc - Used in Nibiru
+eth/downloader   # 7802 loc
+eth/catalyst     # 2600 loc
+eth/fetcher      # 2600 loc
+# eth/filters ?   # 2600 loc - Used in Nibiru
+eth/gasprice     # 1000 loc
+eth/ethconfig    # 408 loc
+eth/gasestimator # 253 loc
+!eth/api*.go
+!eth/backend.go
+
+# cmd, trie, and crypto are MASSIVE
+
+cmd # cmd: 128 files, 28837 lines
+trie # trie: 33 files, 11828 lines
+
+# crypto: 75 files, 11121 lines
+
+crypto/blake2b
+crypto/bn256
+crypto/ecies
+crypto/kzg4844
+crypto/secp256k1
+
+breacon # beacon: 40 files, 7433 lines
+# KEEP common: 47 files, 7228 lines
+metrics # metrics: 67 files, 7225 lines
+
+# accounts: 74 files, 26821 lines
+
+accounts/usbwallet
+accounts/keystore
+accounts/scwallet
+
+p2p       # p2p: 87 files, 24739 lines
+internal  # internal: 56 files, 14850 lines
+!internal/ethapi # important
+
+# KEEP    〇 rpc: 30 files, 7167 lines
+signer    # signer: 26 files, 6882 lines
+rlp       # rlp: 21 files, 6778 lines
+triedb    # triedb: 24 files, 5652 lines
+node      # node: 19 files, 5104 lines
+tests     # tests: 29 files, 4620 lines
+consensus # consensus: 19 files, 4224 lines
+# KEEP    〇 ethclient: 11 files, 3265 lines
+ethdb     # ethdb/: 11 files, 2698 lines
+graphql   # graphql/: 6 files, 2651 lines
+event     # event/: 14 files, 2469 lines
+build     # build/: 5 files, 2392 lines
+miner     # miner/: 8 files, 1816 lines
+# KEEP    〇 params: 9 files, 1656 lines
+log       # log: 7 files, 1322 lines
+console   # console: 4 files, 1251 lines
+ethstats  # ethstats: 2 files, 885 lines
+# KEEP    〇 docs: 1 files, 266 lines
+# KEEP    〇 ai-ctx: 1 files, 212 lines
+# KEEP    〇 version: 1 files, 24 lines
+
