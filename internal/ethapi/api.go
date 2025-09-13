@@ -1417,7 +1417,11 @@ func (api *TransactionAPI) GetRawTransactionByBlockHashAndIndex(ctx context.Cont
 }
 
 // GetTransactionCount returns the number of transactions the given address has sent for the given block number
-func (api *TransactionAPI) GetTransactionCount(ctx context.Context, address common.Address, blockNrOrHash rpc.BlockNumberOrHash) (*hexutil.Uint64, error) {
+func (api *TransactionAPI) GetTransactionCount(
+	ctx context.Context,
+	address common.Address,
+	blockNrOrHash rpc.BlockNumberOrHash,
+) (*hexutil.Uint64, error) {
 	// Ask transaction pool for the nonce which includes pending transactions
 	if blockNr, ok := blockNrOrHash.Number(); ok && blockNr == rpc.PendingBlockNumber {
 		nonce, err := api.b.GetPoolNonce(ctx, address)
