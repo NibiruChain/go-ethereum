@@ -1,0 +1,19 @@
+---
+description: "Use AI documentation for context"
+globs: *.go *.md justfile
+alwaysApply: true
+---
+
+The @ai-ctx directory has detailed documentation of key concepts and intended practices for the project.
+
+### ai-ctx/*.md
+
+Refernce documentation for difficult concepts and connections to other repositories.
+This is the refined hub that builds out the custom knowledge base we'll use for effective prompting.
+
+### ai-ctx/rules
+
+Rules are meant to be used by various LLM tools, not cursor. Rules are also stored in `ai-ctx`.
+For example, cursor sees them via symlinks inside of .cursor/rules as `*.mdc` files. On the other hand, 
+`claude` won't look at the `.cursor` directory, so it's better to keep things in a directory that's visible 
+by default.

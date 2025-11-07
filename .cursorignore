@@ -146,7 +146,7 @@ rlp       # rlp: 21 files, 6778 lines
 triedb    # triedb: 24 files, 5652 lines
 node      # node: 19 files, 5104 lines
 tests     # tests: 29 files, 4620 lines
-consensus # consensus: 19 files, 4224 lines
+# KEEP    〇 consensus: 19 files, 4224 lines
 # KEEP    〇 ethclient: 11 files, 3265 lines
 ethdb     # ethdb/: 11 files, 2698 lines
 graphql   # graphql/: 6 files, 2651 lines

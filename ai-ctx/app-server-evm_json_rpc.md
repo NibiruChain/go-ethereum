@@ -1,0 +1,989 @@
+## File app/server/evm_json_rpc.go Nibiru
+
+```go
+package server
+
+import (
+	"errors"
+	"html/template"
+	"net/http"
+	"time"
+
+	// The `_ "embed"` import adds access to files embedded in the running Go
+	// program (smart contracts).
+	_ "embed"
+
+	"github.com/NibiruChain/nibiru/v2/eth"
+	"github.com/NibiruChain/nibiru/v2/eth/rpc/rpcapi"
+
+	"github.com/gorilla/mux"
+	"github.com/rs/cors"
+
+	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/server"
+	"github.com/cosmos/cosmos-sdk/server/types"
+	gethlog "github.com/ethereum/go-ethereum/log"
+	gethrpc "github.com/ethereum/go-ethereum/rpc"
+
+	"github.com/NibiruChain/nibiru/v2/app/appconst"
+	srvconfig "github.com/NibiruChain/nibiru/v2/app/server/config"
+)
+
+//go:embed evm_json_rpc_get.html
+var htmlTemplateEvmJsonRpc []byte
+
+// StartEthereumJSONRPC starts the Ethereum JSON-RPC server and websocket server
+// for Nibiru.
+func StartEthereumJSONRPC(
+	ctx *server.Context,
+	clientCtx client.Context,
+	tmRPCAddr,
+	tmEndpoint string,
+	config *srvconfig.Config,
+	indexer eth.EVMTxIndexer,
+) (*http.Server, chan struct{}, error) {
+	tmWsClientForRPCApi := ConnectTmWS(tmRPCAddr, tmEndpoint, ctx.Logger)
+
+	// Configure the go-ethereum logger to sync with the ctx.Logger
+	gethLogger := gethlog.NewLogger(&LogHandler{
+		CmtLogger: ctx.Logger.With("module", "geth"),
+	})
+	gethlog.SetDefault(gethLogger)
+
+	rpcServer := gethrpc.NewServer()
+
+	allowUnprotectedTxs := config.JSONRPC.AllowUnprotectedTxs
+	rpcAPIArr := config.JSONRPC.API
+
+	apis := rpcapi.GetRPCAPIs(ctx, clientCtx, tmWsClientForRPCApi, allowUnprotectedTxs, indexer, rpcAPIArr)
+
+	for _, api := range apis {
+		if err := rpcServer.RegisterName(api.Namespace, api.Service); err != nil {
+			gethLogger.Error(
+				"failed to register service in JSON RPC namespace",
+				"namespace", api.Namespace,
+				"service", api.Service,
+			)
+			return nil, nil, err
+		}
+	}
+
+	// This router for the Ethereum JSON-RPC matches on both the path ("/")
+	// and method ("POST", "GET", "PUT") to choose a handler. This allows us
+	// to add different behavior based on the type of request to display a
+	// webpage if someone visits the RPC URL.
+	r := mux.NewRouter()
+	r.HandleFunc("/", rpcServer.ServeHTTP).Methods("POST")
+	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		startTime := time.Now()
+		w.Header().Set("Content-Type", "text/html")
+		w.Header().Set("Accept-Ranges", "bytes")
+		w.Header().Set("Vary", "User-Agent")
+		w.WriteHeader(http.StatusOK)
+
+		tmpl := template.Must(
+			template.New("evm_json_rpc_get").
+				Parse(string(htmlTemplateEvmJsonRpc)),
+		)
+		err := tmpl.Execute(w,
+			struct {
+				Status            string
+				NowTime           string
+				Web3ClientVersion string
+			}{
+				Status:            "Active",
+				NowTime:           startTime.Format(time.DateTime),
+				Web3ClientVersion: appconst.RuntimeVersion(),
+			})
+		if err != nil {
+			http.Error(w, "Internal template error", http.StatusInternalServerError)
+		}
+	}).Methods("GET")
+
+	handlerWithCors := cors.Default()
+	if config.API.EnableUnsafeCORS {
+		handlerWithCors = cors.AllowAll()
+	}
+
+	httpSrv := &http.Server{
+		Addr:              config.JSONRPC.Address,
+		Handler:           handlerWithCors.Handler(r),
+		ReadHeaderTimeout: config.JSONRPC.HTTPTimeout,
+		ReadTimeout:       config.JSONRPC.HTTPTimeout,
+		WriteTimeout:      config.JSONRPC.HTTPTimeout,
+		IdleTimeout:       config.JSONRPC.HTTPIdleTimeout,
+	}
+	httpSrvDone := make(chan struct{}, 1)
+
+	ln, err := Listen(httpSrv.Addr, config)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	errCh := make(chan error)
+	go func() {
+		ctx.Logger.Info("Starting JSON-RPC server", "address", config.JSONRPC.Address)
+		if err := httpSrv.Serve(ln); err != nil {
+			if errors.Is(err, http.ErrServerClosed) {
+				close(httpSrvDone)
+				return
+			}
+
+			ctx.Logger.Error("failed to start JSON-RPC server", "error", err.Error())
+			errCh <- err
+		}
+	}()
+
+	select {
+	case err := <-errCh:
+		ctx.Logger.Error("failed to boot JSON-RPC server", "error", err.Error())
+		return nil, nil, err
+	case <-time.After(types.ServerStartTime): // assume JSON RPC server started successfully
+	}
+
+	ctx.Logger.Info("Starting JSON WebSocket server", "address", config.JSONRPC.WsAddress)
+
+	// allocate separate WS connection to Tendermint
+	tmWsClientForRPCWs := ConnectTmWS(tmRPCAddr, tmEndpoint, ctx.Logger)
+	wsSrv := rpcapi.NewWebsocketsServer(clientCtx, ctx.Logger, tmWsClientForRPCWs, config)
+	wsSrv.Start()
+	return httpSrv, httpSrvDone, nil
+}
+```
+
+## File x/evm/evmstate/msg_server.go in Nibiru
+
+```go
+package evmstate
+
+// Copyright (c) 2023-2024 Nibi, Inc.
+
+import (
+	"context"
+	"encoding/binary"
+	"fmt"
+	"log"
+	"math/big"
+	"strconv"
+
+	sdkioerrors "cosmossdk.io/errors"
+	tmbytes "github.com/cometbft/cometbft/libs/bytes"
+	cmttypes "github.com/cometbft/cometbft/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	gethcommon "github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core"
+	"github.com/ethereum/go-ethereum/core/state"
+	"github.com/ethereum/go-ethereum/core/tracing"
+	gethcore "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/core/vm"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/holiman/uint256"
+
+	"github.com/NibiruChain/nibiru/v2/app/appconst"
+	"github.com/NibiruChain/nibiru/v2/eth"
+	"github.com/NibiruChain/nibiru/v2/x/evm"
+)
+
+var _ evm.MsgServer = &Keeper{}
+
+func (k *Keeper) EthereumTx(
+	goCtx context.Context, txMsg *evm.MsgEthereumTx,
+) (evmResp *evm.MsgEthereumTxResponse, err error) {
+	// This is a `defer` pattern to add behavior that runs in the case that the
+	// error is non-nil, creating a concise way to add extra information.
+	defer func() {
+		if err != nil {
+			log.Printf("UD-DEBUG EthereumTx ERROR: %v", err)
+			err = fmt.Errorf("EthereumTx error: %w", err)
+		}
+	}()
+
+	log.Printf("UD-DEBUG EthereumTx START: hash=%s", txMsg.Hash)
+	if err := txMsg.ValidateBasic(); err != nil {
+		log.Printf("UD-DEBUG EthereumTx ValidateBasic FAILED: %v", err)
+		return evmResp, sdkioerrors.Wrap(err, "EthereumTx validate basic failed")
+	}
+	log.Printf("UD-DEBUG EthereumTx ValidateBasic PASSED")
+	coreTx := txMsg.AsTransaction()
+
+	var sdb *SDB
+	{
+		ctx := sdk.UnwrapSDKContext(goCtx)
+		txConfig := k.TxConfig(ctx, coreTx.Hash())
+		log.Printf("UD-DEBUG EthereumTx txConfig and evmCfg created")
+		sdb = k.NewSDB(ctx, txConfig)
+	}
+	log.Printf("sdb.GetBalance(evm.FEE_COLLECTOR_ADDR): %s\n", sdb.GetBalance(evm.FEE_COLLECTOR_ADDR))
+
+	// get the signer according to the chain rules from the config and block height
+	evmCfg := k.GetEVMConfig(sdb.Ctx())
+	evmMsg, err := core.TransactionToMessage(
+		coreTx,
+		gethcore.NewLondonSigner(evmCfg.ChainConfig.ChainID), evmCfg.BaseFeeWei,
+	)
+	if err != nil {
+		log.Printf("UD-DEBUG EthereumTx TransactionToMessage FAILED: %v", err)
+		return nil, sdkioerrors.Wrap(err, "failed to convert ethereum transaction as core message")
+	}
+	log.Printf("UD-DEBUG EthereumTx TransactionToMessage PASSED")
+
+	// ApplyEvmMsg - Perform the EVM State transition
+	evmObj := k.NewEVM(sdb.Ctx(), *evmMsg, evmCfg, nil /*tracer*/, sdb)
+	log.Printf("UD-DEBUG EthereumTx SDB and EVM created")
+
+	var applyErr error
+	evmResp, applyErr = k.ApplyEvmMsg(
+		*evmMsg,
+		evmObj,
+		evm.COMMIT_ETH_TX, /*commit*/
+	)
+
+	if applyErr != nil {
+		if evmResp == nil {
+			// Consensus error - return immediately, skipping the
+			// "evm.SafeConsumeGas" call we do for
+			log.Printf("UD-DEBUG EthereumTx CONSENSUS ERROR: %v", applyErr)
+			sdb.Ctx().WithLastErrApplyEvmMsg(applyErr)
+			return nil, sdkioerrors.Wrap(applyErr, "consensus error in ethereum message")
+		} else {
+			// Execution error - log but continue processing
+			log.Printf("UD-DEBUG EthereumTx EXECUTION ERROR: %v", applyErr)
+			sdb.Ctx().WithLastErrApplyEvmMsg(applyErr)
+		}
+	}
+	log.Printf("UD-DEBUG EthereumTx ApplyEvmMsg SUCCESS")
+
+	if evmResp != nil {
+		gasErr := evm.SafeConsumeGas(sdb.Ctx(), evmResp.GasUsed, "execute EthereumTx")
+		if gasErr != nil {
+			log.Printf("UD-DEBUG EthereumTx GAS CONSUMPTION ERROR: %v", gasErr)
+			return nil, gasErr
+		}
+		log.Printf("UD-DEBUG EthereumTx GAS CONSUMPTION SUCCESS")
+	}
+
+	log.Printf("sdb.TxCfg(): %+v\n", sdb.TxCfg())
+	sdb.updateBlockBloom(evmResp)
+
+	// refund gas in order to match the Ethereum gas consumption instead of the
+	// default SDK one.
+	refundGas := uint64(0)
+	if evmMsg.GasLimit > evmResp.GasUsed {
+		refundGas = evmMsg.GasLimit - evmResp.GasUsed
+	}
+	weiPerGas := txMsg.EffectiveGasPriceWeiPerGas(evmCfg.BaseFeeWei)
+	if err = k.RefundGas(sdb, evmMsg.From, refundGas, weiPerGas); err != nil {
+		log.Printf("UD-DEBUG EthereumTx GAS REFUND ERROR: %v", err)
+		return nil, sdkioerrors.Wrapf(err, "error refunding leftover gas to sender %s", evmMsg.From)
+	}
+	log.Printf("UD-DEBUG EthereumTx GAS REFUND SUCCESS")
+
+	txEvents := k.GetEvmTxEvents(sdb.Ctx(), coreTx.To(), coreTx.Type(), *evmMsg, evmResp)
+	if err := txEvents.EmitEvents(sdb.RootCtx()); err != nil {
+		log.Printf("UD-DEBUG EthereumTx EMIT EVENTS ERROR: %v", err)
+		return nil, sdkioerrors.Wrap(err, "error emitting ethereum tx events")
+	}
+	log.Printf("UD-DEBUG EthereumTx EMIT EVENTS SUCCESS")
+
+	err = sdb.RootCtx().EventManager().EmitTypedEvent(&evm.EventTxLog{Logs: evmResp.Logs})
+	if err != nil {
+		log.Printf("UD-DEBUG EthereumTx EMIT TX LOG ERROR: %v", err)
+		return nil, sdkioerrors.Wrap(err, "error emitting tx log event")
+	}
+	log.Printf("UD-DEBUG EthereumTx EMIT TX LOG SUCCESS")
+
+	k.EvmState.BlockTxIndex.Set(sdb.RootCtx(), uint64(sdb.TxCfg().TxIndex)+1)
+
+	if evmResp.Failed() && sdb.Ctx().LastErrApplyEvmMsg() != nil {
+		evmResp.VmError = fmt.Sprintf(
+			"%s: %s",
+			evmResp.VmError,
+			sdb.Ctx().LastErrApplyEvmMsg(),
+		)
+		log.Printf("UD-DEBUG EthereumTx TX FAILED with VM error: %s", evmResp.VmError)
+	}
+	log.Printf("UD-DEBUG EthereumTx TX SUCCESS: hash=%s, gasUsed=%d", evmResp.Hash, evmResp.GasUsed)
+	return evmResp, nil
+}
+
+// NewEVM generates a go-ethereum VM.
+//
+// Args:
+//   - ctx: Consensus and KV store info for the current block.
+//   - msg: Ethereum message sent to a contract
+//   - cfg: Encapsulates params required to construct an EVM.
+//   - tracer: Collects execution traces for EVM transaction logging.
+//   - stateDB: Holds the EVM state.
+func (k *Keeper) NewEVM(
+	ctx sdk.Context,
+	msg core.Message,
+	evmCfg EVMConfig,
+	tracer *tracing.Hooks,
+	stateDB vm.StateDB,
+) (evmObj *vm.EVM) {
+	pseudoRandomBytes := make([]byte, 8)
+	binary.BigEndian.PutUint64(pseudoRandomBytes, uint64(ctx.BlockHeader().Time.UnixNano()))
+	pseudoRandom := crypto.Keccak256Hash(append(pseudoRandomBytes, ctx.BlockHeader().LastCommitHash...))
+
+	blockCtx := vm.BlockContext{
+		CanTransfer: core.CanTransfer,
+		Transfer:    core.Transfer,
+		GetHash:     k.GetHashFn(ctx),
+		Coinbase:    evmCfg.BlockCoinbase,
+		GasLimit:    eth.BlockGasLimit(ctx),
+		BlockNumber: big.NewInt(ctx.BlockHeight()),
+		Time:        evm.ParseBlockTimeUnixU64(ctx),
+		Difficulty:  big.NewInt(0), // unused. Only required in PoW context
+		BaseFee:     evmCfg.BaseFeeWei,
+		Random:      &pseudoRandom,
+	}
+
+	txCtx := core.NewEVMTxContext(&msg)
+	if tracer == nil {
+		// Return a default tracer (*[tracing.Hooks]) based on current keeper state
+		tracer = evm.NewTracer(k.tracer, msg, evmCfg.ChainConfig, ctx.BlockHeight())
+	}
+	vmConfig := k.VMConfig(ctx, &evmCfg, tracer)
+	evmObj = vm.NewEVM(blockCtx, txCtx, stateDB, evmCfg.ChainConfig, vmConfig)
+	evmObj.AccessEvents = state.NewAccessEvents(nil) // prevents nil pointers on access
+	return evmObj
+}
+
+// GetHashFn implements [vm.GetHashFunc] for the [vm.EVM] object. It handles 3 cases:
+//  1. The requested height matches the current height from context (and thus same epoch number)
+//  2. The requested height is from a previous height from the same chain epoch
+//  3. The requested height is from a height greater than the latest one
+func (k Keeper) GetHashFn(ctx sdk.Context) vm.GetHashFunc {
+	return func(height uint64) gethcommon.Hash {
+		h, err := eth.SafeInt64(height)
+
+		switch {
+		case err != nil:
+			k.Logger(ctx).Error("failed to cast height to int64", "error", err.Error())
+			return gethcommon.Hash{}
+
+		case ctx.BlockHeight() == h:
+			// Case 1: The requested height matches the one from the context, so
+			// we can retrieve the header hash directly from the context. Note:
+			// The headerHash is only set at begin block, it will be nil in case
+			// of a query context
+			headerHash := ctx.HeaderHash()
+			if len(headerHash) != 0 {
+				return gethcommon.BytesToHash(headerHash)
+			}
+
+			// only recompute the hash if not set (eg: checkTxState)
+			contextBlockHeader := ctx.BlockHeader()
+			header, err := cmttypes.HeaderFromProto(&contextBlockHeader)
+			if err != nil {
+				k.Logger(ctx).Error("failed to cast tendermint header from proto", "error", err.Error())
+				return gethcommon.Hash{}
+			}
+
+			headerHash = header.Hash()
+			return gethcommon.BytesToHash(headerHash)
+
+		case ctx.BlockHeight() > h:
+			// Case 2: if the chain is not the current height we need to retrieve
+			// the hash from the store for the current chain epoch. This only
+			// applies if the current height is greater than the requested
+			// height.
+			histInfo, found := k.stakingKeeper.GetHistoricalInfo(ctx, h)
+			if !found {
+				k.Logger(ctx).Debug("historical info not found", "height", h)
+				return gethcommon.Hash{}
+			}
+
+			header, err := cmttypes.HeaderFromProto(&histInfo.Header)
+			if err != nil {
+				k.Logger(ctx).Error("failed to cast tendermint header from proto", "error", err.Error())
+				return gethcommon.Hash{}
+			}
+
+			return gethcommon.BytesToHash(header.Hash())
+		default:
+			// Case 3: heights greater than the current one returns an empty hash.
+			return gethcommon.Hash{}
+		}
+	}
+}
+
+// ApplyEvmMsg computes the new state by applying the given message against the
+// existing state. If the message fails, the VM execution error with the reason
+// will be returned to the client and the transaction won't be committed to the
+// store.
+//
+// ## Reverted state
+//
+// The snapshot and rollback are supported by the `statedb.StateDB`.
+//
+// ## Different Callers
+//
+// It's called in three scenarios:
+// 1. `ApplyTransaction`, in the transaction processing flow.
+// 2. `EthCall/EthEstimateGas` grpc query handler.
+// 3. Called by other native modules directly.
+//
+// ## Prechecks and Preprocessing
+//
+// All relevant state transition prechecks for the MsgEthereumTx are performed on the AnteHandler,
+// prior to running the transaction against the state. The prechecks run are the following:
+//
+// 1. the nonce of the message caller is correct
+// 2. caller has enough balance to cover transaction fee(gaslimit * gasprice)
+// 3. the amount of gas required is available in the block
+// 4. the purchased gas is enough to cover intrinsic usage
+// 5. there is no overflow when calculating intrinsic gas
+// 6. caller has enough balance to cover asset transfer for **topmost** call
+//
+// The preprocessing steps performed by the AnteHandler are:
+//
+// 1. set up the initial access list
+//
+// ## Tracer parameter
+//
+// It should be a `vm.Tracer` object or nil, if pass `nil`, it'll create a
+// default one based on keeper options.
+//
+// ## Commit parameter
+//
+// If commit is true, the `StateDB` will be committed, otherwise discarded.
+//
+// ## fullRefundLeftoverGas parameter
+//
+// For internal calls like funtokens, user does not specify gas limit explicitly.
+// In this case we don't apply any caps for refund and refund 100%
+func (k *Keeper) ApplyEvmMsg(
+	msg core.Message,
+	evmObj *vm.EVM,
+	commit bool,
+) (evmResp *evm.MsgEthereumTxResponse, err error) {
+	var (
+		sdb              = evmObj.StateDB.(*SDB) // retains doc comments
+		contractCreation = msg.To == nil
+		rules            = evmObj.ChainConfig().Rules(
+			big.NewInt(sdb.Ctx().BlockHeight()),
+			false,
+			evm.ParseBlockTimeUnixU64(sdb.Ctx()),
+		)
+		// gasRemaining represents a running tally of remaining gas
+		// available for EVM execution. Gas remaining starts starts at
+		// the [core.Message].GasLimit and is progressively reduced by:
+		//
+		// 1. Intrinsic gas costs (base transaction fees, data payload costs)
+		// 2. Actual EVM operation execution costs
+		// 3. Potential gas refunds
+		//
+		// It determines how much computational work can be performed before the transaction
+		// runs out of gas, with unused gas potentially being refunded to the sender.
+		gasRemaining = msg.GasLimit
+		tracer       = evmObj.Config.Tracer
+	)
+
+	// Required: Allow the tracer to capture tx level events pertaining to gas consumption.
+	if tracer != nil {
+		// Formerly: evmObj.Config.Tracer.CaptureTxStart in geth v1.10
+		if tracer.OnTxStart != nil {
+			ethTx := gasRemainingTxPartial(msg.GasLimit)
+			tracer.OnTxStart(
+				evmObj.GetVMContext(),
+				ethTx,
+				msg.From,
+			)
+		}
+		// Formerly: evmObj.Config.Tracer.CaptureTxEnd in geth v1.10
+		if tracer.OnTxEnd != nil {
+			defer func() {
+				localEvmResp := new(evm.MsgEthereumTxResponse)
+				if evmResp != nil {
+					localEvmResp = evmResp
+				}
+				tracer.OnTxEnd(&gethcore.Receipt{
+					GasUsed: localEvmResp.GasUsed,
+					TxHash:  sdb.TxCfg().TxHash,
+				}, err)
+			}()
+		}
+	}
+
+	intrinsicGasCost, err := core.IntrinsicGas(
+		msg.Data, msg.AccessList,
+		contractCreation,
+		rules.IsHomestead,
+		rules.IsIstanbul,
+		rules.IsShanghai,
+	)
+	if err != nil {
+		// should have already been checked on Ante Handler
+		return nil, sdkioerrors.Wrap(err, "ApplyEvmMsg: intrinsic gas overflowed")
+	}
+
+	// Check if the provided gas in the message is enough to cover the intrinsic
+	// gas, the base gas cost before execution occurs (gethparams.TxGas, contract
+	// creation, and cost per byte of the data payload).
+	//
+	// Should check again even if it is checked on Ante Handler, because eth_call
+	// don't go through Ante Handler.
+	if gasRemaining < intrinsicGasCost {
+		// eth_estimateGas will check for this exact error
+		return nil, fmt.Errorf(
+			"ApplyEvmMsg: %s: %s: provided msg.Gas (%d) is less than intrinsic gas cost (%d)",
+			vm.ErrOutOfGas, core.ErrIntrinsicGas, gasRemaining, intrinsicGasCost,
+		)
+	}
+	if tracer != nil && tracer.OnGasChange != nil {
+		tracer.OnGasChange(
+			gasRemaining, gasRemaining-intrinsicGasCost, tracing.GasChangeTxIntrinsicGas)
+	}
+	gasRemaining -= intrinsicGasCost
+
+	if rules.IsEIP4762 {
+		evmObj.AccessEvents.AddTxOrigin(msg.From)
+		if dest := msg.To; dest != nil {
+			evmObj.AccessEvents.AddTxDestination(
+				*dest, msg.Value.Sign() != 0,
+			)
+		}
+	}
+
+	msgWei, err := ParseWeiAsMultipleOfMicronibi(msg.Value)
+	if err != nil {
+		return nil, sdkioerrors.Wrapf(err, "ApplyEvmMsg: invalid wei amount %s", msg.Value)
+	}
+
+	// access list preparation is moved from ante handler to here, because it's
+	// needed when `ApplyMessage` is called under contexts where ante handlers
+	// are not run, for example `eth_call` and `eth_estimateGas`.
+	sdb.Prepare(
+		rules,
+		msg.From,                // sender
+		evmObj.Context.Coinbase, // coinbase
+		msg.To,
+		evm.PRECOMPILE_ADDRS,
+		msg.AccessList, // accessList
+	)
+
+	// take over the nonce management from evm:
+	// - reset sender's nonce to msg.Nonce() before calling evm.
+	// - increase sender's nonce by one no matter the result.
+	sdb.SetNonce(msg.From, msg.Nonce)
+
+	var (
+		returnBz []byte
+		// vmErr: VM errors do not affect consensus and therefore are not assigned to "err"
+		vmErr error
+	)
+	if contractCreation {
+		returnBz, _, gasRemaining, vmErr = evmObj.Create(
+			vm.AccountRef(msg.From),
+			msg.Data,
+			gasRemaining,
+			msgWei,
+		)
+	} else {
+		returnBz, gasRemaining, vmErr = evmObj.Call(
+			vm.AccountRef(msg.From),
+			*msg.To,
+			msg.Data,
+			gasRemaining,
+			msgWei,
+		)
+	}
+	// Increment nonce after processing the message
+	sdb.SetNonce(msg.From, msg.Nonce+1)
+
+	// EVM execution error needs to be available for the JSON-RPC client
+	var vmError string
+	if vmErr != nil {
+		vmError = vmErr.Error()
+	}
+
+	// process gas refunds (we refund a portion of the unused gas)
+	gasUsed := msg.GasLimit - gasRemaining
+	// please see https://eips.ethereum.org/EIPS/eip-3529 for why we do refunds
+	refundAmount := gasToRefund(sdb.GetRefund(), gasUsed)
+	gasRemaining += refundAmount
+	gasUsed -= refundAmount
+
+	evmResp = &evm.MsgEthereumTxResponse{
+		GasUsed: gasUsed,
+		VmError: vmError,
+		Ret:     returnBz,
+		Logs:    evm.NewLogsFromEth(sdb.Logs()),
+		Hash:    sdb.TxCfg().TxHash.Hex(),
+	}
+
+	if gasRemaining > msg.GasLimit { // rare case of overflow
+		evmResp.GasUsed = msg.GasLimit // cap the gas used to the original gas limit
+		return evmResp, sdkioerrors.Wrapf(core.ErrGasUintOverflow, "ApplyEvmMsg: message gas limit (%d) < leftover gas (%d)", msg.GasLimit, gasRemaining)
+	}
+
+	// The dirty states in `StateDB` is either committed or discarded after return
+	if commit {
+		sdb.Commit()
+		evmObj.StateDB.Finalise( /*deleteEmptyObjects*/ false)
+	}
+
+	return evmResp, nil
+}
+
+func ParseWeiAsMultipleOfMicronibi(weiInt *big.Int) (
+	newWeiInt *uint256.Int, err error,
+) {
+	// if "weiValue" is nil, 0, or negative, early return
+	cmpSign := weiInt.Cmp(big.NewInt(0))
+	if weiInt == nil {
+		return (*uint256.Int)(nil), nil
+	} else if cmpSign == 0 {
+		return uint256.NewInt(0), nil
+	} else if cmpSign < 0 {
+		return newWeiInt, fmt.Errorf("wei parsing error: negative wei value cannot be a uint256 (%s)", weiInt)
+	}
+
+	// err if weiInt is too small
+	tenPow12 := new(big.Int).Exp(big.NewInt(10), big.NewInt(12), nil)
+	if weiInt.Cmp(tenPow12) < 0 {
+		return newWeiInt, fmt.Errorf(
+			"wei parsing error: wei amount is too small (%s), cannot transfer less than 1 micronibi. 1 NIBI == 10^6 micronibi == 10^18 wei", weiInt)
+	}
+
+	// truncate to highest micronibi amount
+	newWeiInt, overflowed := uint256.FromBig(
+		evm.NativeToWei(evm.WeiToNative(weiInt)),
+	)
+	if overflowed {
+		return newWeiInt, fmt.Errorf("wei parsing error: overflow occurred in conversion from big.Int to uint256.Int for wei value %s", weiInt)
+	}
+	return newWeiInt, nil
+}
+
+// CreateFunToken is a gRPC transaction message for creating fungible token
+// ("FunToken") a mapping between a bank coin and ERC20 token.
+//
+// If the mapping is generated from an ERC20, this tx creates a bank coin to go
+// with it, and if the mapping's generated from a coin, the EVM module
+// deploys an ERC20 contract that for which it will be the owner.
+//
+// ## Mapping an ERC20 Token a Newly Generated Bank Coin
+//
+// When an ERC20 token is used to create a FunToken mapping and corresponding
+// Bank Coin, it must produce valid "bank.Metadata"
+//
+// Constraints:
+//   - The first argument of DenomUnits is required and the official base unit
+//     onchain, meaning the denom must be equivalent to bank.Metadata.Base.
+//   - Coin `bank.Metadata.Display` must be a denom of one of the
+//     `bank.Metadata.DenomUnits`. It is taken by Cosmos-SDK clients like wallets
+//     to be "bank.DenomUnit" client takes the exponent from to display wallet
+//     balances.
+//
+// Decimals for an ERC20 are synonymous to "bank.DenomUnit.Exponent" in what
+// they mean for external clients like wallets.
+func (k *Keeper) CreateFunToken(
+	goCtx context.Context, msg *evm.MsgCreateFunToken,
+) (resp *evm.MsgCreateFunTokenResponse, err error) {
+	err = msg.ValidateBasic()
+	if err != nil {
+		return nil, err
+	}
+
+	// Deduct fee upon registration.
+	ctx := sdk.UnwrapSDKContext(goCtx)
+	err = k.deductCreateFunTokenFee(ctx, msg)
+	if err != nil {
+		return nil, err
+	}
+
+	var funtoken *evm.FunToken
+	emptyErc20 := msg.FromErc20 == nil || msg.FromErc20.Size() == 0
+	switch {
+	case !emptyErc20 && msg.FromBankDenom == "":
+		funtoken, err = k.createFunTokenFromERC20(
+			ctx,
+			msg.FromErc20.Address,
+			msg.AllowZeroDecimals,
+		)
+	case emptyErc20 && msg.FromBankDenom != "":
+		funtoken, err = k.createFunTokenFromCoin(
+			ctx,
+			msg.FromBankDenom,
+			msg.AllowZeroDecimals,
+		)
+	default:
+		// Impossible to reach this case due to ValidateBasic
+		err = fmt.Errorf(
+			"either the \"from_erc20\" or \"from_bank_denom\" must be set (but not both)")
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	_ = ctx.EventManager().EmitTypedEvent(&evm.EventFunTokenCreated{
+		Creator:              msg.Sender,
+		BankDenom:            funtoken.BankDenom,
+		Erc20ContractAddress: funtoken.Erc20Addr.String(),
+		IsMadeFromCoin:       emptyErc20,
+	})
+
+	return &evm.MsgCreateFunTokenResponse{
+		FuntokenMapping: *funtoken,
+	}, err
+}
+
+func (k Keeper) deductCreateFunTokenFee(ctx sdk.Context, msg *evm.MsgCreateFunToken) error {
+	fee := k.FeeForCreateFunToken(ctx)
+	from := sdk.MustAccAddressFromBech32(msg.Sender) // validation in msg.ValidateBasic
+
+	if err := k.Bank.SendCoinsFromAccountToModule(
+		ctx, from, evm.ModuleName, fee); err != nil {
+		return fmt.Errorf("unable to pay the \"create_fun_token_fee\": %w", err)
+	}
+	if err := k.Bank.BurnCoins(ctx, evm.ModuleName, fee); err != nil {
+		return fmt.Errorf("failed to burn the \"create_fun_token_fee\" after payment: %w", err)
+	}
+	return nil
+}
+
+func (k Keeper) FeeForCreateFunToken(ctx sdk.Context) sdk.Coins {
+	evmParams := k.GetParams(ctx)
+	return sdk.NewCoins(sdk.NewCoin(evm.EVMBankDenom, evmParams.CreateFuntokenFee))
+}
+
+// ConvertCoinToEvm Sends a coin with a valid "FunToken" mapping to the
+// given recipient address ("to_eth_addr") in the corresponding ERC20
+// representation.
+//
+// In Nibiru v2.7.0, one special case was added to this function to handle
+// wrapped NIBI (WNIBI) conversions. How this works is, if the Bank Coin given is
+// NIBI, then WNIBI is treated as the fungible token mapping for the NIBI tokens.
+// This can only happen if WNIBI contract is well-defined (non-empty bytecode at
+// the contract address).
+//
+// If WNIBI is not well-defined, this function falls back to using the "FunToken"
+// mapping if one is present. That cannot happen on mainnet (Eth Chain ID 6900),
+// however it can for local networks and testnets, so we mention it here for
+// completeness.
+func (k *Keeper) ConvertCoinToEvm(
+	goCtx context.Context, msg *evm.MsgConvertCoinToEvm,
+) (resp *evm.MsgConvertCoinToEvmResponse, err error) {
+	err = msg.ValidateBasic()
+	if err != nil {
+		return
+	}
+
+	senderBech32 := sdk.MustAccAddressFromBech32(msg.Sender)
+	var sdb *SDB
+	{
+		// Isolate ctx scope so we don't use it by mistake.
+		ctx := sdk.UnwrapSDKContext(goCtx)
+		txConfig := k.TxConfig(ctx, ctx.EvmTxHash())
+		sdb = k.NewSDB(ctx, txConfig)
+	}
+
+	defer func() {
+		if err == nil {
+			sdb.Commit()
+		}
+	}()
+
+	if msg.BankCoin.Denom == appconst.BondDenom {
+		resp, err = k.convertCoinToEvmForWNIBI(
+			sdb, msg, senderBech32,
+		)
+		return
+	}
+
+	funTokens := k.FunTokens.Collect(sdb.Ctx(), k.FunTokens.Indexes.BankDenom.ExactMatch(sdb.Ctx(), msg.BankCoin.Denom))
+	if len(funTokens) == 0 {
+		return nil, fmt.Errorf("funtoken for bank denom \"%s\" does not exist", msg.BankCoin.Denom)
+	}
+	if len(funTokens) > 1 {
+		return nil, fmt.Errorf("multiple funtokens for bank denom \"%s\" found", msg.BankCoin.Denom)
+	}
+	fungibleTokenMapping := funTokens[0]
+
+	if fungibleTokenMapping.IsMadeFromCoin {
+		resp, err = k.convertCoinToEvmBornCoin(
+			sdb, senderBech32, msg.ToEthAddr.Address, msg.BankCoin, fungibleTokenMapping,
+		)
+	} else {
+		resp, err = k.convertCoinToEvmBornERC20(
+			sdb, senderBech32, msg.ToEthAddr.Address, msg.BankCoin, fungibleTokenMapping,
+		)
+	}
+	return
+}
+
+// ConvertEvmToCoin Sends an ERC20 token with a valid "FunToken" mapping to the
+// given recipient address as a bank coin.
+func (k *Keeper) ConvertEvmToCoin(
+	goCtx context.Context, msg *evm.MsgConvertEvmToCoin,
+) (resp *evm.MsgConvertEvmToCoinResponse, err error) {
+	senderAddrs, erc20, amount, toAddrs, err := msg.Validate()
+	if err != nil {
+		return
+	}
+
+	var sdb *SDB
+	{
+		// Isolate ctx scope so we don't use it by mistake.
+		ctx := sdk.UnwrapSDKContext(goCtx)
+		txConfig := k.TxConfig(ctx, ctx.EvmTxHash())
+		sdb = k.NewSDB(ctx, txConfig)
+	}
+
+	defer func() {
+		if err == nil {
+			sdb.Commit()
+		}
+	}()
+
+	// If the erc20 is WNIBI, attempt to unwrap the WNIBI
+	evmParams := k.GetParams(sdb.Ctx())
+	if erc20.Hex() == evmParams.CanonicalWnibi.Hex() {
+		_, err = k.convertEvmToCoinForWNIBI(
+			sdb, erc20, senderAddrs, toAddrs.Bech32,
+			amount,
+		)
+	} else {
+		// Find the FunToken mapping for this ERC20
+		funTokens := k.FunTokens.Collect(sdb.Ctx(), k.FunTokens.Indexes.ERC20Addr.ExactMatch(sdb.Ctx(), erc20.Address))
+		if len(funTokens) != 1 {
+			err = fmt.Errorf("no FunToken mapping exists for ERC20 \"%s\"", erc20.Hex())
+			return
+		}
+
+		funtokenMapping := funTokens[0]
+		amountBig := amount.BigInt()
+		if funtokenMapping.IsMadeFromCoin {
+			err = k.convertEvmToCoinForCoinOriginated(
+				sdb, senderAddrs, toAddrs.Bech32, erc20.Address, amountBig, funtokenMapping.BankDenom,
+			)
+		} else {
+			err = k.convertEvmToCoinForERC20Originated(
+				sdb, senderAddrs, toAddrs.Bech32, erc20.Address, amountBig, funtokenMapping.BankDenom,
+			)
+		}
+	}
+
+	return &evm.MsgConvertEvmToCoinResponse{}, err
+}
+
+// TxEvents represents ABCI events that are emitted an Ethereum tx. Nil fields
+// repesent intentional omission
+type TxEvents struct {
+	EventEthereumTx       evm.EventEthereumTx // Typed event: eth.evm.v1.EventEthereumTx
+	EventMessage          sdk.Event           // Untyped event: "message", used for tendermint subscription
+	EventContractDeployed *evm.EventContractDeployed
+	EventContractExecuted *evm.EventContractExecuted
+	EventTransfer         *evm.EventTransfer
+}
+
+// EmitEthereumTxEvents emits all EVM events applicable to a particular execution case
+func (txevents TxEvents) EmitEvents(
+	ctx sdk.Context,
+) error {
+	// We consider only the EventEthereumTx as essential enough to fail the tx
+	// because it's crucial to the functionality of the EVM indexer and queries
+	// in the EVM JSON-RPC API.
+	err := ctx.EventManager().EmitTypedEvent(&txevents.EventEthereumTx)
+	if err != nil {
+		return sdkioerrors.Wrap(err, "EmitEthereumTxEvents: failed to emit event ethereum tx")
+	}
+
+	ctx.EventManager().EmitEvent(
+		txevents.EventMessage,
+	)
+
+	{
+		event := txevents.EventContractDeployed
+		if event != nil {
+			_ = ctx.EventManager().EmitTypedEvent(event)
+		}
+	}
+	{
+		event := txevents.EventContractExecuted
+		if event != nil {
+			_ = ctx.EventManager().EmitTypedEvent(event)
+		}
+	}
+	{
+		event := txevents.EventTransfer
+		if event != nil {
+			_ = ctx.EventManager().EmitTypedEvent(event)
+		}
+	}
+
+	return nil
+}
+
+// GetEvmTxEvents emits all types of EVM events applicable to a particular execution case
+func (k *Keeper) GetEvmTxEvents(
+	ctx sdk.Context,
+	recipient *gethcommon.Address,
+	txType uint8,
+	msg core.Message,
+	evmResp *evm.MsgEthereumTxResponse,
+) (events TxEvents) {
+	// Typed event: eth.evm.v1.EventEthereumTx
+	eventEthereumTx := &evm.EventEthereumTx{
+		EthHash: evmResp.Hash,
+		Index:   strconv.FormatUint(k.EvmState.BlockTxIndex.GetOr(ctx, 0), 10),
+		GasUsed: strconv.FormatUint(evmResp.GasUsed, 10),
+	}
+	if len(ctx.TxBytes()) > 0 {
+		eventEthereumTx.Hash = tmbytes.HexBytes(cmttypes.Tx(ctx.TxBytes()).Hash()).String()
+	}
+	if recipient != nil {
+		eventEthereumTx.Recipient = recipient.Hex()
+	}
+	if evmResp.Failed() {
+		eventEthereumTx.VmError = evmResp.VmError
+	}
+	events.EventEthereumTx = *eventEthereumTx
+	events.EventMessage = sdk.NewEvent(
+		sdk.EventTypeMessage,
+		sdk.NewAttribute(sdk.AttributeKeyModule, evm.ModuleName),
+		sdk.NewAttribute(sdk.AttributeKeySender, msg.From.Hex()),
+		sdk.NewAttribute(evm.MessageEventAttrTxType, fmt.Sprintf("%d", txType)),
+	)
+
+	// Emit typed events
+	if !evmResp.Failed() {
+		if recipient == nil { // contract creation
+			contractAddr := crypto.CreateAddress(msg.From, msg.Nonce)
+			events.EventContractDeployed = &evm.EventContractDeployed{
+				Sender:       msg.From.Hex(),
+				ContractAddr: contractAddr.String(),
+			}
+		} else if len(msg.Data) > 0 { // contract executed
+			events.EventContractExecuted = &evm.EventContractExecuted{
+				Sender:       msg.From.Hex(),
+				ContractAddr: msg.To.String(),
+			}
+		} else if msg.Value.Cmp(big.NewInt(0)) > 0 { // evm transfer
+			events.EventTransfer = &evm.EventTransfer{
+				Sender:    msg.From.Hex(),
+				Recipient: msg.To.Hex(),
+				Amount:    msg.Value.String(),
+			}
+		}
+	}
+
+	return events
+}
+
+// updateBlockBloom updates transient block bloom filter
+func (sdb *SDB) updateBlockBloom(
+	evmResp *evm.MsgEthereumTxResponse,
+) {
+	ctx := sdb.RootCtx()
+	k := sdb.Keeper()
+	logIndex := uint64(sdb.TxCfg().LogIndex)
+	if len(evmResp.Logs) > 0 {
+		logs := evm.LogsToEthereum(evmResp.Logs)
+		k.EvmState.BlockBloom.Set(ctx, k.EvmState.CalcBloomFromLogs(ctx, logs).Bytes())
+		k.EvmState.BlockLogSize.Set(ctx, logIndex+uint64(len(logs)))
+	}
+}
+```
