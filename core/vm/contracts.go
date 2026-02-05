@@ -52,6 +52,22 @@ type PrecompiledContract interface {
 	Address() common.Address
 }
 
+var _ PrecompiledContract = (*ecrecover)(nil)
+
+type DynamicPrecompile interface {
+	// DynamicRun, similar to `Run`, executes the precompiled contract, except it
+	// calculates the contract gas usage at runtime (dynamically) rather than
+	// based on the value from `RequiredGas`.
+	DynamicRun(
+		evmObj *EVM,
+		sender common.Address,
+		contract *Contract,
+		readonly bool,
+		calledFromDelegatedCall bool,
+	) (outBz []byte, gasCost uint64, err error)
+	PrecompiledContract
+}
+
 // PrecompiledContracts contains the precompiled contracts supported at the given fork.
 type PrecompiledContracts map[common.Address]PrecompiledContract
 
@@ -236,14 +252,29 @@ func RunPrecompiledContract(
 	calledFromDelegatedCall bool,
 ) (ret []byte, remainingGas uint64, err error) {
 	logger := evm.Config.Tracer
-	gasCost := p.RequiredGas(input)
-	if suppliedGas < gasCost {
-		return nil, 0, ErrOutOfGas
+
+	pDyn, isDynamic := p.(DynamicPrecompile)
+	if !isDynamic {
+		gasCost := p.RequiredGas(input)
+		if suppliedGas < gasCost {
+			return nil, 0, ErrOutOfGas
+		}
+		if logger != nil && logger.OnGasChange != nil {
+			logger.OnGasChange(suppliedGas, suppliedGas-gasCost, tracing.GasChangeCallPrecompiledContract)
+		}
+		suppliedGas -= gasCost
+		contract := &Contract{
+			CallerAddress: caller.Address(),
+			caller:        caller,
+			self:          AccountRef(p.Address()),
+			Gas:           suppliedGas,
+			value:         value,
+			Input:         input,
+		}
+		output, err := p.Run(evm, sender, contract, readOnly, calledFromDelegatedCall)
+		return output, suppliedGas, err
 	}
-	if logger != nil && logger.OnGasChange != nil {
-		logger.OnGasChange(suppliedGas, suppliedGas-gasCost, tracing.GasChangeCallPrecompiledContract)
-	}
-	suppliedGas -= gasCost
+
 	contract := &Contract{
 		CallerAddress: caller.Address(),
 		caller:        caller,
@@ -252,8 +283,17 @@ func RunPrecompiledContract(
 		value:         value,
 		Input:         input,
 	}
-	output, err := p.Run(evm, sender, contract, readOnly, calledFromDelegatedCall)
-	return output, suppliedGas, err
+	output, gasCost, err := pDyn.DynamicRun(evm, sender, contract, readOnly, calledFromDelegatedCall)
+	if err != nil {
+		return output, 0, err
+	}
+	if gasCost > suppliedGas {
+		return output, 0, ErrOutOfGas
+	}
+	if logger != nil && logger.OnGasChange != nil {
+		logger.OnGasChange(suppliedGas, suppliedGas-gasCost, tracing.GasChangeCallPrecompiledContract)
+	}
+	return output, suppliedGas - gasCost, nil
 }
 
 // ecrecover implemented as a native contract.
