@@ -46,8 +46,15 @@ type Contract struct {
 	// contract. However when the "call method" is delegated this value
 	// needs to be initialised to that of the caller's caller.
 	CallerAddress common.Address
-	caller        ContractRef
-	self          ContractRef
+	// TrueCaller is the address whose account a mutable precompile may act for.
+	//
+	//   - A top-level call sets TrueCaller to the transaction sender.
+	//   - An ordinary CALL resets TrueCaller to the called contract.
+	//   - DELEGATECALL copies the already-resolved TrueCaller from the calling
+	//     frame, so delegation cannot reach back across an earlier CALL boundary.
+	TrueCaller common.Address
+	caller     ContractRef
+	self       ContractRef
 
 	jumpdests map[common.Hash]bitvec // Aggregated result of JUMPDEST analysis.
 	analysis  bitvec                 // Locally cached result of JUMPDEST analysis
@@ -66,7 +73,12 @@ type Contract struct {
 
 // NewContract returns a new contract environment for the execution of EVM.
 func NewContract(caller ContractRef, object ContractRef, value *uint256.Int, gas uint64) *Contract {
-	c := &Contract{CallerAddress: caller.Address(), caller: caller, self: object}
+	c := &Contract{
+		CallerAddress: caller.Address(),
+		TrueCaller:    object.Address(),
+		caller:        caller,
+		self:          object,
+	}
 
 	if parent, ok := caller.(*Contract); ok {
 		// Reuse JUMPDEST analysis from parent context if available.
@@ -138,6 +150,7 @@ func (c *Contract) AsDelegate() *Contract {
 	// that caller is something other than a Contract.
 	parent := c.caller.(*Contract)
 	c.CallerAddress = parent.CallerAddress
+	c.TrueCaller = parent.TrueCaller
 	c.value = parent.value
 
 	return c

@@ -46,8 +46,9 @@ import (
 type PrecompiledContract interface {
 	// RequiredGas calculates the contract gas use
 	RequiredGas(input []byte) uint64
-	// Run runs the precompiled contract
-	Run(evmObj *EVM, sender common.Address, contract *Contract, readonly bool, calledFromDelegatedCall bool) ([]byte, error)
+	// Run runs the precompiled contract. trueCaller follows the call-frame rules
+	// documented by Contract.TrueCaller.
+	Run(evmObj *EVM, trueCaller common.Address, contract *Contract, readonly bool, calledFromDelegatedCall bool) ([]byte, error)
 
 	Address() common.Address
 }
@@ -60,7 +61,7 @@ type DynamicPrecompile interface {
 	// based on the value from `RequiredGas`.
 	DynamicRun(
 		evmObj *EVM,
-		sender common.Address,
+		trueCaller common.Address,
 		contract *Contract,
 		readonly bool,
 		calledFromDelegatedCall bool,
@@ -242,7 +243,7 @@ func ActivePrecompiles(rules params.Rules) []common.Address {
 // - any error that occurred
 func RunPrecompiledContract(
 	evm *EVM,
-	sender common.Address,
+	trueCaller common.Address,
 	p PrecompiledContract,
 	caller ContractRef,
 	input []byte,
@@ -265,25 +266,27 @@ func RunPrecompiledContract(
 		suppliedGas -= gasCost
 		contract := &Contract{
 			CallerAddress: caller.Address(),
+			TrueCaller:    trueCaller,
 			caller:        caller,
 			self:          AccountRef(p.Address()),
 			Gas:           suppliedGas,
 			value:         value,
 			Input:         input,
 		}
-		output, err := p.Run(evm, sender, contract, readOnly, calledFromDelegatedCall)
+		output, err := p.Run(evm, trueCaller, contract, readOnly, calledFromDelegatedCall)
 		return output, suppliedGas, err
 	}
 
 	contract := &Contract{
 		CallerAddress: caller.Address(),
+		TrueCaller:    trueCaller,
 		caller:        caller,
 		self:          AccountRef(p.Address()),
 		Gas:           suppliedGas,
 		value:         value,
 		Input:         input,
 	}
-	output, gasCost, err := pDyn.DynamicRun(evm, sender, contract, readOnly, calledFromDelegatedCall)
+	output, gasCost, err := pDyn.DynamicRun(evm, trueCaller, contract, readOnly, calledFromDelegatedCall)
 	if err != nil {
 		return output, 0, err
 	}

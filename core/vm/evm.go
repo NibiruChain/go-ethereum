@@ -230,6 +230,12 @@ func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas 
 			// If the account has no code, we can abort here
 			// The depth-check is already done, and precompiles handled above
 			contract := NewContract(caller, AccountRef(addrCopy), value, gas)
+			if evm.depth == 0 {
+				// A signed transaction lends its sender identity to the first
+				// execution frame. Nested CALLs keep NewContract's default,
+				// which is the called contract itself.
+				contract.TrueCaller = caller.Address()
+			}
 			contract.SetCallCode(&addrCopy, evm.StateDB.GetCodeHash(addrCopy), code)
 			ret, err = evm.interpreter.Run(contract, input, false)
 			gas = contract.Gas
@@ -346,7 +352,7 @@ func (evm *EVM) DelegateCall(caller ContractRef, addr common.Address, input []by
 
 		ret, gas, err = RunPrecompiledContract(
 			evm,
-			parent.CallerAddress, // caller is the caller of the caller
+			parent.TrueCaller,
 			p,
 			caller,
 			input,
